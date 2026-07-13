@@ -43,12 +43,12 @@ def render_digest(articles: list[Article]) -> str:
 
 
 _CATEGORY_STYLES = {
-    CATEGORY_INNODEP: ("이노뎁 소식", "#6d28d9"),
-    CATEGORY_SECURITY: ("보안 관련 기사", "#1557d6"),
-    CATEGORY_INDUSTRY: ("업계 동향 기사", "#0796a5"),
-    CATEGORY_GOVERNMENT: ("정부·공공 기사", "#2563a6"),
-    CATEGORY_VENTURE: ("벤처·금융 기사", "#b7791f"),
-    CATEGORY_LABOR: ("생산·임금 기사", "#c2415d"),
+    CATEGORY_INNODEP: ("이노뎁 소식", "#1D2545"),
+    CATEGORY_SECURITY: ("보안 관련 기사", "#1D2545"),
+    CATEGORY_INDUSTRY: ("업계 동향 기사", "#1D2545"),
+    CATEGORY_GOVERNMENT: ("정부·공공 기사", "#1D2545"),
+    CATEGORY_VENTURE: ("벤처·금융 기사", "#1D2545"),
+    CATEGORY_LABOR: ("생산·임금 기사", "#1D2545"),
 }
 
 
@@ -88,7 +88,7 @@ def render_digest_html(
         '<tr><td class="hero-pad" bgcolor="#092653" style="padding:36px 48px 32px;background-color:#092653;background-image:linear-gradient(135deg,#123c7a 0%,#061b3d 100%);">',
         '<div style="font-size:11px;line-height:18px;letter-spacing:2.2px;color:#69b8ff;font-weight:600;">INNODEP DAILY BRIEF</div>',
         '<div style="margin-top:8px;font-size:32px;line-height:40px;letter-spacing:-.8px;color:#ffffff;font-weight:700;">TODAY NEWS BRIEF</div>',
-        f'<div style="margin-top:6px;font-size:16px;line-height:25px;color:#9dccff;font-weight:500;">{localized_now.year}년 {localized_now.month}월 {localized_now.day}일</div>',
+        f'<div style="margin-top:6px;font-size:12px;line-height:25px;color:#9dccff;font-weight:500;">{localized_now.year}년 {localized_now.month}월 {localized_now.day}일</div>',
         f'<div style="margin-top:16px;font-size:13px;line-height:21px;color:#b7d5f4;font-weight:400;">{escape(category_summary)}</div>',
         "</td></tr>",
         '<tr><td class="content-pad" style="padding:26px 28px 36px;background-color:#ffffff;">',
@@ -126,7 +126,7 @@ def render_digest_html(
                 [
                     '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;margin:0 0 12px;border:1px solid #dfe3e8;background-color:#ffffff;">',
                     '<tr><td style="padding:17px 18px 14px;">',
-                    f'<div class="article-title" style="font-size:16px;line-height:24px;letter-spacing:-.1px;font-weight:600;white-space:normal;overflow:visible;text-overflow:clip;word-break:keep-all;overflow-wrap:anywhere;"><a href="{url}" style="display:block;color:#141b2d;text-decoration:none;white-space:normal;overflow:visible;text-overflow:clip;">{title}</a></div>',
+                    f'<div class="article-title" style="font-family:\'Malgun Gothic\',\'맑은 고딕\',Arial,sans-serif;font-size:14px;line-height:24px;letter-spacing:-.1px;font-weight:600;white-space:normal;overflow:visible;text-overflow:clip;word-break:keep-all;overflow-wrap:anywhere;"><a href="{url}" style="display:block;color:#141b2d;text-decoration:none;white-space:normal;overflow:visible;text-overflow:clip;">{title}</a></div>',
                     "</td></tr></table>",
                 ]
             )
