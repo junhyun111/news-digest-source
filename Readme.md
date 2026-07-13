@@ -18,67 +18,217 @@
 ### 1. 사전 준비
 
 1. **AWS 계정**: [AWS 계정 생성 페이지](https://aws.amazon.com/ko/)에서 계정을 만듭니다.
-2. **네이버 검색 API 애플리케이션**: 네이버 개발자 센터 > Application > 애플리케이션 등록 > 애플리케이션 이름 지정(임의) > 사용 API **검색** 선택 > 비로그인 오픈 API 서비스 환경 > 웹 서비스 URL http://localhost 입력
+2. **네이버 검색 API 애플리케이션**: 다음 순서로 검색 API 사용 신청을 완료합니다.
 
-내 애플리케이션에서 `Client ID`와 `Client Secret`을 발급받을 수 있습니다.
+   1. [네이버 개발자 센터](https://developers.naver.com/)에 접속하여 네이버 계정으로 로그인합니다.
+   2. 상단 메뉴에서 **Application → 애플리케이션 등록**으로 이동합니다.
+   3. **애플리케이션 이름**에 알아보기 쉬운 임의의 이름(예: `news-digest`)을 입력합니다.
+   4. **사용 API**에서 **검색**을 선택합니다.
+   5. **비로그인 오픈 API 서비스 환경**에서 **WEB 설정**을 선택합니다.
+   6. **웹 서비스 URL**에 `http://localhost`를 입력합니다. 이 프로젝트는 서버에서 비로그인 검색 API를 호출하므로 로컬 URL을 등록값으로 사용할 수 있습니다.
+   7. 약관을 확인하고 **등록하기**를 누릅니다.
+   8. 등록이 완료되면 **Application → 내 애플리케이션 → 등록한 애플리케이션**으로 이동합니다.
+   9. **개요** 또는 **인증 정보** 화면에 표시되는 `Client ID`와 `Client Secret`을 복사하여 안전한 곳에 보관합니다. 이후 Lambda 환경 변수의 `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET`에 각각 입력합니다.
 
-3. **SMTP 계정**: 메일 공급자의 SMTP 서버 주소, 포트, 로그인 아이디, 비밀번호 또는 앱 비밀번호를 준비합니다. 기본값은 네이버 SMTP(`smtp.naver.com`, 포트 `587`, STARTTLS)입니다. SMTP 사용 설정과 외부 로그인 허용 여부는 메일 공급자에서 미리 확인합니다.
+   `Client Secret`은 비밀번호와 같은 인증 정보이므로 README, 소스 코드, `.env.sample` 또는 배포 ZIP에 직접 기록하거나 외부에 공유하지 마세요.
+
+3. **네이버 메일 SMTP 계정**: 네이버 계정의 일반 비밀번호 대신 애플리케이션 비밀번호를 생성하여 SMTP 인증에 사용합니다.
+
+   1. [네이버](https://www.naver.com/)에 접속하여 발신에 사용할 네이버 계정으로 로그인합니다.
+   2. 로그인 영역의 프로필 또는 네이버 ID를 누른 뒤 **네이버ID → 보안설정**으로 이동합니다.
+   3. **2단계 인증** 항목에서 **관리**를 누릅니다. 2단계 인증이 설정되어 있지 않다면 먼저 휴대전화 인증을 거쳐 2단계 인증을 설정합니다.
+   4. 2단계 인증 관리 화면에서 **애플리케이션 비밀번호 관리** 항목으로 이동합니다.
+   5. **애플리케이션 비밀번호 생성**에서 애플리케이션 종류를 선택합니다. 직접 입력할 수 있다면 `news-digest`와 같이 알아보기 쉬운 이름을 입력합니다.
+   6. **생성하기**를 누릅니다.
+   7. 화면에 표시된 애플리케이션 비밀번호를 즉시 복사하여 안전한 곳에 보관합니다. 이 비밀번호는 SMTP 인증에 사용하며, 네이버 계정의 일반 로그인 비밀번호는 사용하지 않습니다.
+   8. 이 프로젝트에서는 다음 SMTP 값을 사용합니다.
+
+      | 설정 | 입력값 |
+      | --- | --- |
+      | SMTP 서버명 | `smtp.naver.com` |
+      | SMTP 포트 | `587` |
+      | 보안 연결 | STARTTLS |
+      | 사용자 이름 | 네이버 메일 주소(예: `naver_id@naver.com`) |
+      | 비밀번호 | 앞 단계에서 생성한 애플리케이션 비밀번호 |
+      | 발신자 주소 | 로그인한 계정의 네이버 메일 주소(예: `naver_id@naver.com`) |
+
+   9. 준비한 값은 이후 Lambda 환경 변수에 다음과 같이 입력합니다.
+
+      ```text
+      SMTP_HOST=smtp.naver.com
+      SMTP_PORT=587
+      SMTP_USERNAME=naver_id@naver.com
+      SMTP_PASSWORD=생성한_애플리케이션_비밀번호
+      MAIL_SENDER=naver_id@naver.com
+      ```
+
+   애플리케이션 비밀번호는 생성 직후에만 확인할 수 있으므로 안전하게 보관하세요. 노출되었거나 분실한 경우 기존 비밀번호를 삭제하고 새로 생성합니다. 이 값은 `Client Secret`과 마찬가지로 README, 소스 코드, `.env.sample` 또는 배포 ZIP 파일에 기록하지 마세요.
+
 4. **수신자 주소**: 실제 수신자와 시험 발송 수신자 이메일 주소를 준비합니다. 여러 주소는 쉼표로 구분합니다.
 
 > Lambda 환경 변수에 입력한 값은 일반 텍스트 설정값으로 취급될 수 있습니다. 배포 권한과 Lambda 조회 권한을 최소화하고, 비밀번호를 저장소나 배포 ZIP 파일에 넣지 마세요. 이 코드는 현재 AWS Secrets Manager를 직접 읽지 않으므로 Secrets Manager를 사용하려면 별도 코드 변경이 필요합니다.
 
 ### 2. AWS 초기 설정
 
-AWS Management Console에 로그인한 뒤 우측 상단 리전을 **서울(ap-northeast-2)** 로 변경합니다. 
+다음 순서로 AWS 콘솔에 로그인하고 작업 리전을 서울로 설정합니다.
 
-콘솔만 사용해도 배포할 수 있습니다. 명령줄 배포도 사용하려면 로컬 PC에 AWS CLI를 설치한 후 다음을 실행합니다.
+1. [AWS Management Console](https://console.aws.amazon.com/)에 접속합니다.
+2. AWS 계정 생성 시 사용한 이메일로 로그인하거나, 회사에서 제공한 IAM 사용자 또는 IAM Identity Center 계정으로 로그인합니다.
+3. 콘솔 화면 오른쪽 위에 표시되는 **리전 이름**을 누릅니다.
+4. 리전 목록에서 **아시아 태평양(서울) `ap-northeast-2`** 을 선택합니다.
+5. 이후 IAM을 제외한 Lambda, EventBridge 등의 화면 오른쪽 위에 **서울**이 표시되는지 확인합니다. 서로 다른 리전에 리소스를 만들면 목록에서 보이지 않거나 연결할 수 없습니다.
 
-```powershell
-aws configure
-```
+AWS CLI는 필수가 아니며, 이 README의 배포는 AWS 콘솔만으로 진행할 수 있습니다. 코드 업데이트를 명령줄에서 수행하려는 경우에만 다음 절차를 추가로 진행합니다.
 
-차례로 Access Key ID, Secret Access Key, 기본 리전 `ap-northeast-2`, 출력 형식 `json`을 입력하고 연결을 확인합니다.
+1. [AWS CLI 설치 안내](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)에서 운영체제에 맞는 AWS CLI v2를 설치합니다.
+2. PowerShell 또는 터미널을 새로 열고 설치 여부를 확인합니다.
 
-```powershell
-aws sts get-caller-identity
-```
+   ```powershell
+   aws --version
+   ```
 
-장기 액세스 키 대신 IAM Identity Center를 사용하는 조직이라면 관리자가 제공한 정보로 `aws configure sso`를 실행한 뒤 `aws sso login`을 사용합니다.
+3. IAM에서 발급받은 액세스 키를 사용하는 경우 다음 명령을 실행합니다.
+
+   ```powershell
+   aws configure
+   ```
+
+4. 표시되는 항목에 차례로 다음 값을 입력합니다.
+
+   | 입력 항목 | 값 |
+   | --- | --- |
+   | `AWS Access Key ID` | IAM에서 발급받은 Access Key ID |
+   | `AWS Secret Access Key` | IAM에서 발급받은 Secret Access Key |
+   | `Default region name` | `ap-northeast-2` |
+   | `Default output format` | `json` |
+
+5. 다음 명령으로 로그인된 AWS 계정 번호와 사용자 정보를 확인합니다.
+
+   ```powershell
+   aws sts get-caller-identity
+   ```
+
+회사에서 IAM Identity Center를 사용한다면 액세스 키를 새로 만들지 말고 관리자가 제공한 시작 URL과 리전으로 `aws configure sso`를 실행한 뒤 `aws sso login`을 사용합니다. 루트 계정의 액세스 키는 생성하거나 사용하지 마세요.
 
 ### 3. Lambda 실행 역할 만들기
 
-1. AWS 콘솔에서 **IAM → 역할 → 역할 생성**으로 이동합니다.
-2. 신뢰할 수 있는 엔터티 유형은 **AWS 서비스**, 사용 사례는 **Lambda**를 선택합니다.
-3. 권한 정책으로 `AWSLambdaBasicExecutionRole`을 연결합니다. 이 정책은 CloudWatch Logs에 실행 로그를 기록할 수 있게 합니다.
-4. 역할 이름을 예를 들어 `news-digest-lambda-role`로 지정하고 생성합니다.
+Lambda가 실행 로그를 CloudWatch Logs에 기록할 수 있도록 전용 IAM 역할을 만듭니다.
+
+1. AWS 콘솔 위쪽 검색창에 `IAM`을 입력하고 검색 결과에서 **IAM**을 선택합니다.
+2. IAM 화면 왼쪽 메뉴에서 **액세스 관리 → 역할**을 선택합니다.
+3. 오른쪽 위의 **역할 생성**을 누릅니다.
+4. **신뢰할 수 있는 엔터티 유형**에서 **AWS 서비스**를 선택합니다.
+5. **서비스 또는 사용 사례**에서 `Lambda`를 검색하고 **Lambda**를 선택한 뒤 **다음**을 누릅니다.
+6. **권한 정책** 검색창에 `AWSLambdaBasicExecutionRole`을 입력합니다.
+7. `AWSLambdaBasicExecutionRole` 왼쪽의 확인란을 선택하고 **다음**을 누릅니다. 이 정책은 Lambda 실행 로그를 CloudWatch Logs에 기록할 수 있게 합니다.
+8. **역할 이름**에 `news-digest-lambda-role`을 입력합니다.
+9. 신뢰할 수 있는 엔터티에 `lambda.amazonaws.com`, 권한에 `AWSLambdaBasicExecutionRole`이 표시되는지 검토합니다.
+10. 화면 아래의 **역할 생성**을 누릅니다.
+11. 역할 목록에서 `news-digest-lambda-role`을 검색하여 정상적으로 생성되었는지 확인합니다.
 
 이 애플리케이션은 네이버 API와 SMTP 서버에 직접 접속하며 다른 AWS 서비스 권한은 요구하지 않습니다. Lambda를 VPC에 연결하면 인터넷 경로가 사라질 수 있으므로, 특별한 이유가 없다면 VPC에 연결하지 마세요. VPC 연결이 필요하다면 NAT Gateway 등 외부 인터넷 송신 경로가 반드시 있어야 합니다.
 
 ### 4. 배포 ZIP 파일 만들기
 
-프로젝트 루트에서 다음 PowerShell 명령을 실행합니다. 현재 `requirements.txt`는 비어 있고 코드는 Python 표준 라이브러리만 사용하므로 별도의 패키지 설치가 필요하지 않습니다.
+Lambda에는 Python 파일을 하나씩 올리지 않고, 실행에 필요한 파일과 폴더를 하나의 ZIP 파일로 만들어 업로드합니다. 현재 `requirements.txt`는 비어 있고 Python 표준 라이브러리만 사용하므로 별도의 패키지 설치는 필요하지 않습니다.
 
-```powershell
-Compress-Archive -Path lambda_function.py,job.py,main.py,news_digest -DestinationPath news-digest.zip -Force
-```
+Windows에서 다음 순서로 배포 파일을 만듭니다.
 
-ZIP 파일을 열었을 때 최상위에 `lambda_function.py`, `job.py`, `main.py`, `news_digest/`가 보여야 합니다. 이 파일들이 한 단계 아래 폴더에 들어가 있으면 Lambda가 핸들러를 찾지 못합니다.
+1. 파일 탐색기에서 이 프로젝트가 저장된 `news-digest-source` 폴더를 엽니다.
+2. 탐색기 주소 표시줄에 `powershell`을 입력하고 Enter를 누릅니다. 현재 프로젝트 폴더를 기준으로 PowerShell이 열립니다.
+3. 다음 명령을 실행합니다.
+
+   ```powershell
+   Compress-Archive -Path lambda_function.py,job.py,main.py,news_digest -DestinationPath news-digest.zip -Force
+   ```
+
+4. 프로젝트 폴더에 `news-digest.zip`이 생성되었는지 확인합니다.
+5. `news-digest.zip`을 열었을 때 첫 화면에 다음 파일과 폴더가 바로 표시되는지 확인합니다.
+
+   ```text
+   news-digest.zip
+   ├─ lambda_function.py
+   ├─ job.py
+   ├─ main.py
+   └─ news_digest/
+   ```
+
+   `news-digest-source/` 폴더가 ZIP 안에 통째로 들어가고 Python 파일이 그 아래에 있으면 잘못 압축된 것입니다. `lambda_function.py`가 ZIP 최상위에 없으면 Lambda가 핸들러를 찾지 못합니다.
+
+6. ZIP을 다시 만들 때는 같은 명령을 실행합니다. `-Force` 옵션이 기존 `news-digest.zip`을 새 파일로 교체합니다.
+
+> `.env`, `.venv`, `__pycache__`, 실제 비밀번호 또는 개발용 데이터 파일은 배포 ZIP에 포함하지 마세요.
 
 ### 5. Lambda 함수 생성 및 코드 배포
 
-1. AWS 콘솔에서 **Lambda → 함수 생성 → 새로 작성**을 선택합니다.
-2. 함수 이름은 예를 들어 `news-digest`로 입력합니다.
-3. 런타임은 **Python 3.12 이상**을 선택합니다.
-4. 아키텍처는 `x86_64` 또는 `arm64` 어느 쪽이든 사용할 수 있습니다.
-5. 실행 역할에서 **기존 역할 사용**을 선택하고 앞에서 만든 `news-digest-lambda-role`을 지정합니다.
-6. 함수를 생성한 뒤 **코드 → 업로드 위치 → .zip 파일**에서 `news-digest.zip`을 업로드하고 **저장** 또는 **배포**를 누릅니다.
-7. **런타임 설정 → 편집**에서 핸들러를 다음과 같이 지정합니다.
+다음 순서로 Lambda 함수를 만들고 앞에서 생성한 ZIP 파일을 배포합니다.
 
-```text
-lambda_function.lambda_handler
-```
+#### 5-1. Lambda 함수 만들기
 
-8. **구성 → 일반 구성 → 편집**에서 메모리를 `256 MB`, 제한 시간을 우선 `5분`으로 설정합니다. 검색어가 많아 처리 시간이 긴 경우 CloudWatch 실행 시간을 확인해 조정합니다.
+1. AWS 콘솔 위쪽 검색창에 `Lambda`를 입력하고 검색 결과에서 **Lambda**를 선택합니다.
+2. 화면 오른쪽 위의 리전이 **서울**인지 다시 확인합니다.
+3. 왼쪽 메뉴에서 **함수**를 선택하고 오른쪽 위의 **함수 생성**을 누릅니다.
+4. 함수 생성 방식에서 **새로 작성**을 선택합니다.
+5. **기본 정보**에 다음 값을 입력합니다.
+
+   | 설정 | 선택 또는 입력값 |
+   | --- | --- |
+   | 함수 이름 | `news-digest` |
+   | 런타임 | `Python 3.12` 이상 |
+   | 아키텍처 | `x86_64` |
+
+6. **기본 실행 역할 변경**을 펼칩니다.
+7. **실행 역할**에서 **기존 역할 사용**을 선택합니다.
+8. **기존 역할** 목록에서 `news-digest-lambda-role`을 선택합니다.
+9. 나머지 항목은 기본값으로 두고 **함수 생성**을 누릅니다.
+10. 함수 상세 화면 상단에 초록색 성공 메시지가 표시될 때까지 기다립니다.
+
+#### 5-2. Python ZIP 파일 업로드하기
+
+1. Lambda 왼쪽 메뉴의 **함수**에서 방금 만든 `news-digest`를 선택합니다.
+2. 함수 상세 화면에서 **코드** 탭을 선택합니다.
+3. **코드 소스** 영역 오른쪽의 **업로드 위치**를 누릅니다.
+4. 메뉴에서 **.zip 파일**을 선택합니다.
+5. 파일 선택 창에서 프로젝트 폴더의 `news-digest.zip`을 선택하고 **열기**를 누릅니다.
+6. 업로드 창에서 **저장**을 누릅니다.
+7. 업로드가 완료된 뒤 코드 소스의 파일 목록에 `lambda_function.py`, `job.py`, `main.py`, `news_digest`가 표시되는지 확인합니다.
+
+AWS 공식 안내에 따르면 로컬에서 직접 올리는 ZIP 파일은 50MB 이하여야 합니다. 이 프로젝트의 ZIP은 해당 크기보다 작아 콘솔에서 바로 업로드할 수 있습니다. ZIP 구조에 관한 자세한 내용은 [Python Lambda ZIP 배포 공식 문서](https://docs.aws.amazon.com/lambda/latest/dg/python-package.html)를 참고하세요.
+
+#### 5-3. Lambda 핸들러 설정하기
+
+1. 같은 함수 화면의 **코드** 탭에서 아래쪽 **런타임 설정** 영역을 찾습니다.
+2. **편집**을 누릅니다.
+3. **핸들러** 입력값을 다음과 같이 변경합니다.
+
+   ```text
+   lambda_function.lambda_handler
+   ```
+
+4. **저장**을 누릅니다.
+
+`lambda_function`은 ZIP 최상위의 `lambda_function.py` 파일 이름이고, `lambda_handler`는 파일 안에서 Lambda가 호출할 함수 이름입니다.
+
+#### 5-4. 메모리와 제한 시간 설정하기
+
+1. 함수 상세 화면에서 **구성** 탭을 선택합니다.
+2. 왼쪽 메뉴에서 **일반 구성**을 선택합니다.
+3. **편집**을 누릅니다.
+4. **메모리**에 `256 MB`를 입력합니다.
+5. **제한 시간**을 `5분 0초`로 설정합니다.
+6. **저장**을 누릅니다.
+
+검색어가 많아 실행이 끝나지 않으면 CloudWatch Logs의 실행 시간을 확인한 뒤 제한 시간을 조정합니다. 네이버 API와 SMTP 서버에 접속해야 하므로 **구성 → VPC**는 기본값인 VPC 연결 없음 상태로 둡니다.
+
+#### 5-5. 수정된 Python 파일 다시 배포하기
+
+코드를 수정한 후에는 다음 순서로 Lambda 코드를 업데이트합니다.
+
+1. 프로젝트 폴더에서 `Compress-Archive` 명령을 다시 실행하여 `news-digest.zip`을 새로 만듭니다.
+2. AWS 콘솔에서 **Lambda → 함수 → news-digest → 코드**로 이동합니다.
+3. **코드 소스 → 업로드 위치 → .zip 파일**을 선택합니다.
+4. 새로 만든 `news-digest.zip`을 선택한 뒤 **저장**을 누릅니다.
+5. 업로드 성공 메시지를 확인한 후 수동 테스트를 실행합니다.
 
 명령줄로 기존 함수의 코드만 갱신하려면 다음을 사용할 수 있습니다.
 
@@ -88,7 +238,15 @@ aws lambda update-function-code --function-name news-digest --zip-file fileb://n
 
 ### 6. Lambda 환경 변수 설정
 
-**Lambda → news-digest → 구성 → 환경 변수 → 편집**에서 아래 값을 추가합니다.
+네이버 API 인증 정보, SMTP 애플리케이션 비밀번호, 수신자 주소를 Lambda 환경 변수에 등록합니다.
+
+1. AWS 콘솔에서 **Lambda → 함수 → `news-digest`**로 이동합니다.
+2. 함수 상세 화면에서 **구성** 탭을 선택합니다.
+3. 왼쪽 메뉴에서 **환경 변수**를 선택합니다.
+4. 오른쪽의 **편집**을 누릅니다.
+5. **환경 변수 추가**를 누르면 나타나는 **키**와 **값** 입력란에 아래 표의 변수를 한 줄씩 등록합니다.
+6. 필수 변수를 모두 입력한 뒤 화면 아래의 **저장**을 누릅니다.
+7. 환경 변수 목록에 입력한 키가 표시되는지 확인합니다. 인증 정보의 실제 값은 화면 공유나 문서에 노출하지 마세요.
 
 | 변수 | 필수 | 예시/설명 |
 | --- | --- | --- |
@@ -96,9 +254,9 @@ aws lambda update-function-code --function-name news-digest --zip-file fileb://n
 | `NAVER_CLIENT_SECRET` | 예 | 네이버 검색 API Client Secret |
 | `SMTP_HOST` | 예 | `smtp.naver.com` |
 | `SMTP_PORT` | 아니요 | 기본값 `587` |
-| `SMTP_USERNAME` | 예 | SMTP 로그인 계정 |
-| `SMTP_PASSWORD` | 예 | SMTP 비밀번호 또는 앱 비밀번호 |
-| `MAIL_SENDER` | 예 | 발신자 이메일 주소 |
+| `SMTP_USERNAME` | 예 | 네이버 메일 주소(예: `naver_id@naver.com`) |
+| `SMTP_PASSWORD` | 예 | 네이버 보안설정에서 생성한 애플리케이션 비밀번호 |
+| `MAIL_SENDER` | 예 | `SMTP_USERNAME`과 같은 네이버 메일 주소 |
 | `REAL_RECIPIENTS` | 운영 시 예 | `user1@example.com,user2@example.com` |
 | `TEST_RECIPIENTS` | 시험 시 예 | 시험 메일을 받을 주소 |
 | `TEST_MODE` | 아니요 | 시험 수신자에게만 보내려면 `true`, 운영은 `false` |
