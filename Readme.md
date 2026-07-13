@@ -73,42 +73,10 @@
 다음 순서로 AWS 콘솔에 로그인하고 작업 리전을 서울로 설정합니다.
 
 1. [AWS Management Console](https://console.aws.amazon.com/)에 접속합니다.
-2. AWS 계정 생성 시 사용한 이메일로 로그인하거나, 회사에서 제공한 IAM 사용자 또는 IAM Identity Center 계정으로 로그인합니다.
+2. 사용할 AWS 계정으로 로그인합니다.
 3. 콘솔 화면 오른쪽 위에 표시되는 **리전 이름**을 누릅니다.
 4. 리전 목록에서 **아시아 태평양(서울) `ap-northeast-2`** 을 선택합니다.
-5. 이후 IAM을 제외한 Lambda, EventBridge 등의 화면 오른쪽 위에 **서울**이 표시되는지 확인합니다. 서로 다른 리전에 리소스를 만들면 목록에서 보이지 않거나 연결할 수 없습니다.
-
-AWS CLI는 필수가 아니며, 이 README의 배포는 AWS 콘솔만으로 진행할 수 있습니다. 코드 업데이트를 명령줄에서 수행하려는 경우에만 다음 절차를 추가로 진행합니다.
-
-1. [AWS CLI 설치 안내](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)에서 운영체제에 맞는 AWS CLI v2를 설치합니다.
-2. PowerShell 또는 터미널을 새로 열고 설치 여부를 확인합니다.
-
-   ```powershell
-   aws --version
-   ```
-
-3. IAM에서 발급받은 액세스 키를 사용하는 경우 다음 명령을 실행합니다.
-
-   ```powershell
-   aws configure
-   ```
-
-4. 표시되는 항목에 차례로 다음 값을 입력합니다.
-
-   | 입력 항목 | 값 |
-   | --- | --- |
-   | `AWS Access Key ID` | IAM에서 발급받은 Access Key ID |
-   | `AWS Secret Access Key` | IAM에서 발급받은 Secret Access Key |
-   | `Default region name` | `ap-northeast-2` |
-   | `Default output format` | `json` |
-
-5. 다음 명령으로 로그인된 AWS 계정 번호와 사용자 정보를 확인합니다.
-
-   ```powershell
-   aws sts get-caller-identity
-   ```
-
-회사에서 IAM Identity Center를 사용한다면 액세스 키를 새로 만들지 말고 관리자가 제공한 시작 URL과 리전으로 `aws configure sso`를 실행한 뒤 `aws sso login`을 사용합니다. 루트 계정의 액세스 키는 생성하거나 사용하지 마세요.
+5. Lambda와 EventBridge를 설정하는 동안 화면 오른쪽 위에 **서울**이 표시되는지 확인합니다.
 
 ### 3. Lambda 실행 역할 만들기
 
@@ -193,8 +161,6 @@ Windows에서 다음 순서로 배포 파일을 만듭니다.
 6. 업로드 창에서 **저장**을 누릅니다.
 7. 업로드가 완료된 뒤 코드 소스의 파일 목록에 `lambda_function.py`, `job.py`, `main.py`, `news_digest`가 표시되는지 확인합니다.
 
-AWS 공식 안내에 따르면 로컬에서 직접 올리는 ZIP 파일은 50MB 이하여야 합니다. 이 프로젝트의 ZIP은 해당 크기보다 작아 콘솔에서 바로 업로드할 수 있습니다. ZIP 구조에 관한 자세한 내용은 [Python Lambda ZIP 배포 공식 문서](https://docs.aws.amazon.com/lambda/latest/dg/python-package.html)를 참고하세요.
-
 #### 5-3. Lambda 핸들러 설정하기
 
 1. 같은 함수 화면의 **코드** 탭에서 아래쪽 **런타임 설정** 영역을 찾습니다.
@@ -214,8 +180,8 @@ AWS 공식 안내에 따르면 로컬에서 직접 올리는 ZIP 파일은 50MB 
 1. 함수 상세 화면에서 **구성** 탭을 선택합니다.
 2. 왼쪽 메뉴에서 **일반 구성**을 선택합니다.
 3. **편집**을 누릅니다.
-4. **메모리**에 `256 MB`를 입력합니다.
-5. **제한 시간**을 `5분 0초`로 설정합니다.
+4. **메모리**에 `2048 MB`를 입력합니다.
+5. **제한 시간**을 `15분 0초`로 설정합니다.
 6. **저장**을 누릅니다.
 
 검색어가 많아 실행이 끝나지 않으면 CloudWatch Logs의 실행 시간을 확인한 뒤 제한 시간을 조정합니다. 네이버 API와 SMTP 서버에 접속해야 하므로 **구성 → VPC**는 기본값인 VPC 연결 없음 상태로 둡니다.
@@ -229,12 +195,6 @@ AWS 공식 안내에 따르면 로컬에서 직접 올리는 ZIP 파일은 50MB 
 3. **코드 소스 → 업로드 위치 → .zip 파일**을 선택합니다.
 4. 새로 만든 `news-digest.zip`을 선택한 뒤 **저장**을 누릅니다.
 5. 업로드 성공 메시지를 확인한 후 수동 테스트를 실행합니다.
-
-명령줄로 기존 함수의 코드만 갱신하려면 다음을 사용할 수 있습니다.
-
-```powershell
-aws lambda update-function-code --function-name news-digest --zip-file fileb://news-digest.zip --region ap-northeast-2
-```
 
 ### 6. Lambda 환경 변수 설정
 
@@ -314,7 +274,7 @@ EventBridge Scheduler는 시간대를 직접 지정할 수 있어 한국 시간 
 5. 유연한 시간 범위는 정확한 시각 실행이 필요하면 **끔**으로 설정합니다.
 6. 대상은 **AWS Lambda Invoke**, 함수는 `news-digest`를 선택하고 입력 페이로드는 `{}`로 둡니다.
 7. Scheduler 실행 역할은 새 역할 생성을 선택하거나, 해당 Lambda 호출 권한이 있는 기존 역할을 선택합니다.
-8. 재시도 정책과 필요 시 DLQ를 설정한 뒤 일정을 활성화합니다.
+8. **일정 생성**을 누르고 일정이 **활성화됨** 상태인지 확인합니다.
 
 예약 시각은 뉴스 선별 범위에도 영향을 줍니다. 기본 한국 시간 기준으로 일반 평일에는 전날부터 실행 당일 오전 7시 30분 전까지, 월요일에는 주말을 포함한 최근 범위를 대상으로 합니다.
 
@@ -324,7 +284,6 @@ EventBridge Scheduler는 시간대를 직접 지정할 수 있어 한국 시간 
 - 수신자나 검색어 변경은 Lambda 환경 변수만 수정하면 됩니다.
 - 코드 변경 후 `news-digest.zip`을 다시 만들고 Lambda 코드에 업로드합니다.
 - 같은 일정이 중복 생성되면 메일도 중복 발송될 수 있으므로 활성 일정은 하나만 유지합니다.
-- Lambda, CloudWatch Logs, Scheduler에는 사용량에 따른 소액의 비용이 발생할 수 있습니다.
 
 ## 개발자 사용 방법: 로컬 환경
 
