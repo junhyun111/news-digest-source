@@ -19,8 +19,11 @@
 
 다음 계정과 정보가 필요합니다.
 
-1. **AWS 계정**: [AWS 계정 생성 페이지](https://aws.amazon.com/ko/)에서 계정을 만듭니다. 루트 계정에는 MFA를 활성화하고, 실제 작업은 별도의 IAM 관리자 사용자 또는 IAM Identity Center 사용자로 진행하는 것을 권장합니다.
-2. **네이버 검색 API 애플리케이션**: 네이버 개발자 센터에서 애플리케이션을 등록하고 `Client ID`와 `Client Secret`을 발급받습니다. 사용 API로 **검색**을 선택합니다.
+1. **AWS 계정**: [AWS 계정 생성 페이지](https://aws.amazon.com/ko/)에서 계정을 만듭니다.
+2. **네이버 검색 API 애플리케이션**: 네이버 개발자 센터 > Application > 애플리케이션 등록 > 애플리케이션 이름 지정(임의) > 사용 API **검색** 선택 > 비로그인 오픈 API 서비스 환경 > 웹 서비스 URL http://localhost 입력
+
+
+ `Client ID`와 `Client Secret`을 발급받습니다. 사용 API로 **검색**을 선택합니다.
 3. **SMTP 계정**: 메일 공급자의 SMTP 서버 주소, 포트, 로그인 아이디, 비밀번호 또는 앱 비밀번호를 준비합니다. 기본값은 네이버 SMTP(`smtp.naver.com`, 포트 `587`, STARTTLS)입니다. SMTP 사용 설정과 외부 로그인 허용 여부는 메일 공급자에서 미리 확인합니다.
 4. **수신자 주소**: 실제 수신자와 시험 발송 수신자 이메일 주소를 준비합니다. 여러 주소는 쉼표로 구분합니다.
 
@@ -151,13 +154,13 @@ EventBridge Scheduler는 시간대를 직접 지정할 수 있어 한국 시간 
 1. AWS 콘솔에서 **Amazon EventBridge → Scheduler → 일정 생성**으로 이동합니다.
 2. 일정 이름을 예를 들어 `news-digest-daily`로 입력합니다.
 3. 일정 패턴에서 **반복 일정 → Cron 기반 일정**을 선택합니다.
-4. 매일 오전 7시에 실행하려면 Cron 표현식에 `cron(0 7 * * ? *)`를 입력하고 시간대를 `Asia/Seoul`로 지정합니다.
+4. 매일 오전 7시 30분에 실행하려면 Cron 표현식에 `cron(30 7 * * ? *)`를 입력하고 시간대를 `Asia/Seoul`로 지정합니다.
 5. 유연한 시간 범위는 정확한 시각 실행이 필요하면 **끔**으로 설정합니다.
 6. 대상은 **AWS Lambda Invoke**, 함수는 `news-digest`를 선택하고 입력 페이로드는 `{}`로 둡니다.
 7. Scheduler 실행 역할은 새 역할 생성을 선택하거나, 해당 Lambda 호출 권한이 있는 기존 역할을 선택합니다.
 8. 재시도 정책과 필요 시 DLQ를 설정한 뒤 일정을 활성화합니다.
 
-예약 시각은 뉴스 선별 범위에도 영향을 줍니다. 기본 한국 시간 기준으로 일반 평일에는 전날부터 실행 당일 오전 7시 전까지, 월요일에는 주말을 포함한 최근 범위를 대상으로 합니다.
+예약 시각은 뉴스 선별 범위에도 영향을 줍니다. 기본 한국 시간 기준으로 일반 평일에는 전날부터 실행 당일 오전 7시 30분 전까지, 월요일에는 주말을 포함한 최근 범위를 대상으로 합니다.
 
 ### 9. 운영과 업데이트
 
@@ -171,7 +174,7 @@ EventBridge Scheduler는 시간대를 직접 지정할 수 있어 한국 시간 
 
 ### 요구 사항
 
-- Python 3.10 이상 권장
+- Python 3.14 권장
 - 네이버 검색 API 인증 정보
 - 실제 발송을 시험할 경우 SMTP 계정 정보
 
@@ -184,14 +187,6 @@ Windows PowerShell 기준:
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-```
-
-macOS/Linux 기준:
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
 python -m pip install -r requirements.txt
 ```
 
