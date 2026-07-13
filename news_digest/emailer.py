@@ -45,10 +45,10 @@ def render_digest(articles: list[Article]) -> str:
 _CATEGORY_STYLES = {
     CATEGORY_INNODEP: ("이노뎁 소식", "#6d28d9"),
     CATEGORY_SECURITY: ("보안 관련 기사", "#1557d6"),
-    CATEGORY_INDUSTRY: ("업계 동향", "#0796a5"),
-    CATEGORY_GOVERNMENT: ("정부·공공", "#2563a6"),
-    CATEGORY_VENTURE: ("벤처·금융", "#b7791f"),
-    CATEGORY_LABOR: ("생산·임금", "#c2415d"),
+    CATEGORY_INDUSTRY: ("업계 동향 기사", "#0796a5"),
+    CATEGORY_GOVERNMENT: ("정부·공공 기사", "#2563a6"),
+    CATEGORY_VENTURE: ("벤처·금융 기사", "#b7791f"),
+    CATEGORY_LABOR: ("생산·임금 기사", "#c2415d"),
 }
 
 
@@ -78,20 +78,18 @@ def render_digest_html(
         '<meta charset="utf-8">',
         '<meta name="viewport" content="width=device-width, initial-scale=1">',
         "<style>",
-        "@media only screen and (max-width:640px){.email-shell{width:100%!important}.outer-pad{padding:0!important}.hero-pad{padding:34px 24px!important}.content-pad{padding:18px 12px!important}.article-title{font-size:17px!important}.section-title{font-size:22px!important}}",
+        "@media only screen and (max-width:640px){.email-shell{width:100%!important}.outer-pad{padding:0!important}.hero-pad{padding:26px 22px!important}.content-pad{padding:16px 10px!important}.article-title{font-size:16px!important}.section-title{font-size:18px!important}}",
         "</style>",
         "</head>",
         '<body style="margin:0;padding:0;background-color:#f3f5f8;font-family:Arial,\'Apple SD Gothic Neo\',\'Malgun Gothic\',sans-serif;color:#141b2d;">',
         '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;background-color:#f3f5f8;">',
         '<tr><td class="outer-pad" align="center" style="padding:28px 12px;">',
-        '<table role="presentation" class="email-shell" width="680" cellspacing="0" cellpadding="0" border="0" style="width:680px;max-width:680px;background-color:#ffffff;border:1px solid #dfe5ed;box-shadow:0 8px 24px rgba(15,35,70,.10);">',
-        '<tr><td class="hero-pad" bgcolor="#092653" style="padding:48px 48px 42px;background-color:#092653;background-image:linear-gradient(135deg,#123c7a 0%,#061b3d 100%);">',
-        '<div style="font-size:13px;line-height:20px;letter-spacing:2.4px;color:#69b8ff;font-weight:700;">INNODEP DAILY BRIEF</div>',
-        '<div style="margin-top:10px;font-size:38px;line-height:46px;letter-spacing:-1px;color:#ffffff;font-weight:800;">TODAY NEWS BRIEF</div>',
-        f'<div style="margin-top:8px;font-size:20px;line-height:30px;color:#9dccff;font-weight:600;">{localized_now.year}년 {localized_now.month}월 {localized_now.day}일</div>',
-        '<div style="width:34px;height:4px;margin:24px 0 20px;background-color:#5ab5ff;"></div>',
-        f'<div style="font-size:22px;line-height:32px;color:#ffffff;font-weight:700;">오늘의 주요 뉴스 <span style="font-size:32px;color:#8bc8ff;">{len(articles)}</span>건</div>',
-        f'<div style="margin-top:9px;font-size:14px;line-height:23px;color:#b7d5f4;">{escape(category_summary)}</div>',
+        '<table role="presentation" class="email-shell" width="760" cellspacing="0" cellpadding="0" border="0" style="width:760px;max-width:760px;background-color:#ffffff;border:1px solid #dfe5ed;box-shadow:0 8px 24px rgba(15,35,70,.10);">',
+        '<tr><td class="hero-pad" bgcolor="#092653" style="padding:36px 48px 32px;background-color:#092653;background-image:linear-gradient(135deg,#123c7a 0%,#061b3d 100%);">',
+        '<div style="font-size:11px;line-height:18px;letter-spacing:2.2px;color:#69b8ff;font-weight:600;">INNODEP DAILY BRIEF</div>',
+        '<div style="margin-top:8px;font-size:32px;line-height:40px;letter-spacing:-.8px;color:#ffffff;font-weight:700;">TODAY NEWS BRIEF</div>',
+        f'<div style="margin-top:6px;font-size:16px;line-height:25px;color:#9dccff;font-weight:500;">{localized_now.year}년 {localized_now.month}월 {localized_now.day}일</div>',
+        f'<div style="margin-top:16px;font-size:13px;line-height:21px;color:#b7d5f4;font-weight:400;">{escape(category_summary)}</div>',
         "</td></tr>",
         '<tr><td class="content-pad" style="padding:26px 28px 36px;background-color:#ffffff;">',
     ]
@@ -100,7 +98,7 @@ def render_digest_html(
         parts.append(
             '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" '
             'style="width:100%;border:1px solid #e2e7ef;background-color:#fafbfd;">'
-            '<tr><td align="center" style="padding:44px 20px;font-size:16px;line-height:26px;color:#667085;">'
+            '<tr><td align="center" style="padding:44px 20px;font-size:14px;line-height:23px;color:#667085;font-weight:400;">'
             '오늘 선별된 기사가 없습니다.</td></tr></table>'
         )
 
@@ -114,8 +112,8 @@ def render_digest_html(
                 f'<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;margin:0 0 22px;border:1px solid #dfe5ed;border-top:7px solid {color};background-color:#fbfcfe;">',
                 '<tr><td style="padding:22px 22px 8px;">',
                 '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr>',
-                f'<td class="section-title" valign="middle" style="font-size:25px;line-height:32px;color:{color};font-weight:800;">{escape(label)}</td>',
-                f'<td width="54" align="right" valign="middle" style="font-size:21px;line-height:28px;color:{color};font-weight:800;">{len(category_articles)}건</td>',
+                f'<td class="section-title" valign="middle" style="font-size:20px;line-height:28px;color:{color};font-weight:700;">{escape(label)}</td>',
+                f'<td width="54" align="right" valign="middle" style="font-size:17px;line-height:25px;color:{color};font-weight:600;">{len(category_articles)}건</td>',
                 "</tr></table>",
                 "</td></tr>",
                 '<tr><td style="padding:8px 18px 18px;">',
@@ -124,16 +122,11 @@ def render_digest_html(
         for article in category_articles:
             url = escape(article.canonical_url, quote=True)
             title = escape(article.title)
-            source = escape(source_name(article))
             parts.extend(
                 [
                     '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;margin:0 0 12px;border:1px solid #dfe3e8;background-color:#ffffff;">',
                     '<tr><td style="padding:17px 18px 14px;">',
-                    f'<div class="article-title" style="font-size:19px;line-height:28px;letter-spacing:-.2px;font-weight:700;"><a href="{url}" style="color:#141b2d;text-decoration:none;">{title}</a></div>',
-                    '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;margin-top:13px;border-top:1px solid #e6e9ee;"><tr>',
-                    f'<td style="padding-top:11px;font-size:13px;line-height:20px;color:#7a8290;">{source}</td>',
-                    f'<td align="right" style="padding-top:11px;font-size:14px;line-height:20px;font-weight:700;"><a href="{url}" style="color:{color};text-decoration:none;">읽기&nbsp; →</a></td>',
-                    "</tr></table>",
+                    f'<div class="article-title" style="font-size:16px;line-height:24px;letter-spacing:-.1px;font-weight:600;white-space:normal;overflow:visible;text-overflow:clip;word-break:keep-all;overflow-wrap:anywhere;"><a href="{url}" style="display:block;color:#141b2d;text-decoration:none;white-space:normal;overflow:visible;text-overflow:clip;">{title}</a></div>',
                     "</td></tr></table>",
                 ]
             )
