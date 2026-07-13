@@ -17,13 +17,11 @@
 
 ### 1. 사전 준비
 
-다음 계정과 정보가 필요합니다.
-
 1. **AWS 계정**: [AWS 계정 생성 페이지](https://aws.amazon.com/ko/)에서 계정을 만듭니다.
 2. **네이버 검색 API 애플리케이션**: 네이버 개발자 센터 > Application > 애플리케이션 등록 > 애플리케이션 이름 지정(임의) > 사용 API **검색** 선택 > 비로그인 오픈 API 서비스 환경 > 웹 서비스 URL http://localhost 입력
 
+내 애플리케이션에서 `Client ID`와 `Client Secret`을 발급받을 수 있습니다.
 
- `Client ID`와 `Client Secret`을 발급받습니다. 사용 API로 **검색**을 선택합니다.
 3. **SMTP 계정**: 메일 공급자의 SMTP 서버 주소, 포트, 로그인 아이디, 비밀번호 또는 앱 비밀번호를 준비합니다. 기본값은 네이버 SMTP(`smtp.naver.com`, 포트 `587`, STARTTLS)입니다. SMTP 사용 설정과 외부 로그인 허용 여부는 메일 공급자에서 미리 확인합니다.
 4. **수신자 주소**: 실제 수신자와 시험 발송 수신자 이메일 주소를 준비합니다. 여러 주소는 쉼표로 구분합니다.
 
@@ -31,7 +29,7 @@
 
 ### 2. AWS 초기 설정
 
-AWS Management Console에 로그인한 뒤 우측 상단 리전을 **서울(ap-northeast-2)** 로 변경합니다. 비용 알림이 필요하면 Billing의 AWS Budgets에서 월간 예산과 이메일 알림도 설정합니다.
+AWS Management Console에 로그인한 뒤 우측 상단 리전을 **서울(ap-northeast-2)** 로 변경합니다. 
 
 콘솔만 사용해도 배포할 수 있습니다. 명령줄 배포도 사용하려면 로컬 PC에 AWS CLI를 설치한 후 다음을 실행합니다.
 
