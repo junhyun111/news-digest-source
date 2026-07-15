@@ -26,6 +26,33 @@ def article(title: str, category: str = "", url: str | None = None) -> Article:
 
 
 class SemanticScoringTests(unittest.TestCase):
+    def test_security_accepts_video_surveillance_article(self) -> None:
+        candidate = article("보령시, 방범 CCTV 확충하고 통합관제센터 연계")
+
+        self.assertTrue(
+            recommender.is_eligible_category_candidate(
+                candidate, CATEGORY_SECURITY, 0.8, {"rule": 0.5}, 0.5
+            )
+        )
+
+    def test_security_rejects_cybersecurity_without_video_core(self) -> None:
+        candidate = article("정부, AI 사이버보안 기업에 10조원 투자")
+
+        self.assertFalse(
+            recommender.is_eligible_category_candidate(
+                candidate, CATEGORY_SECURITY, 0.8, {"rule": 0.5}, 0.5
+            )
+        )
+
+    def test_security_rejects_generic_ai_safety_article(self) -> None:
+        candidate = article("청주시, AI 안전특별시 선언")
+
+        self.assertFalse(
+            recommender.is_eligible_category_candidate(
+                candidate, CATEGORY_SECURITY, 0.8, {"rule": 0.5}, 0.5
+            )
+        )
+
     def test_unsupported_category_does_not_initialize_model(self) -> None:
         candidate = article("일반 기사")
         with patch.object(
