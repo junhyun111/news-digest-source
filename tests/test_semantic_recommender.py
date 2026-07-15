@@ -26,6 +26,38 @@ def article(title: str, category: str = "", url: str | None = None) -> Article:
 
 
 class SemanticScoringTests(unittest.TestCase):
+    def test_industry_accepts_company_product_and_core_technology(self) -> None:
+        candidates = [
+            article("구글, 국내 기업 겨냥 풀스택 AI 플랫폼 선보인다"),
+            article("SK인텔릭스, 공공 로봇 실증사업 수주"),
+            article("MS와 오픈AI, AI 동맹 전략 재편"),
+            article("에스트래픽, AI 지능형교통 기술 실증"),
+            article("스마트팩토리 액상 공정 AI 진단장비 개발"),
+        ]
+
+        for candidate in candidates:
+            with self.subTest(title=candidate.title):
+                self.assertTrue(
+                    recommender.is_eligible_category_candidate(
+                        candidate, CATEGORY_INDUSTRY, 0.8, {"rule": 0.5}, 0.5
+                    )
+                )
+
+    def test_industry_rejects_generic_ai_social_and_issue_articles(self) -> None:
+        candidates = [
+            article("챗GPT·제미나이에 성·마약 질문하다 걸린 메타"),
+            article("장애 청소년 AI 활용·취업 돕는 LG전자"),
+            article("노벨상 수상자·AI 개발자 200여명, AI 충격 대비해야"),
+        ]
+
+        for candidate in candidates:
+            with self.subTest(title=candidate.title):
+                self.assertFalse(
+                    recommender.is_eligible_category_candidate(
+                        candidate, CATEGORY_INDUSTRY, 0.8, {"rule": 0.5}, 0.5
+                    )
+                )
+
     def test_security_accepts_video_surveillance_article(self) -> None:
         candidate = article("보령시, 방범 CCTV 확충하고 통합관제센터 연계")
 
