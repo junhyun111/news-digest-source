@@ -205,8 +205,8 @@ Windows에서 다음 순서로 배포 파일을 만듭니다.
 | `TEST_RECIPIENTS` | 시험 시 예 | 시험 메일을 받을 주소 |
 | `TEST_MODE` | 아니요 | 시험 수신자에게만 보내려면 `true`, 운영은 `false` |
 | `TIMEZONE` | 아니요 | 기본값 `Asia/Seoul` |
-| `MAX_ARTICLES` | 아니요 | 전체 최대 기사 수, 기본값 `25` |
-| `MIN_SCORE` | 아니요 | 기사 선택 기준값, 기본값 `12` |
+| `MAX_ARTICLES` | 아니요 | 전체 안전 상한, 기본값 `35` (개수를 강제로 채우지 않음) |
+| `MIN_SCORE` | 아니요 | 기사 선택 기준값, 기본값 `15` |
 | `MMR_LAMBDA` | 아니요 | 관련도와 다양성 균형값, 기본값 `0.70` (`0`~`1`) |
 | `USE_SAMPLE_DATA` | 아니요 | 실제 API 대신 샘플 데이터를 쓰려면 `true` |
 | `NEWS_QUERIES` | 아니요 | 쉼표로 구분한 검색어. 현재 카테고리별 수집에는 아래 카테고리 변수가 우선 사용됨 |
@@ -315,8 +315,8 @@ TEST_MODE=true
 TEST_RECIPIENTS=developer@example.com
 REAL_RECIPIENTS=team@example.com
 TIMEZONE=Asia/Seoul
-MAX_ARTICLES=25
-MIN_SCORE=12
+MAX_ARTICLES=35
+MIN_SCORE=15
 MMR_LAMBDA=0.70
 ```
 

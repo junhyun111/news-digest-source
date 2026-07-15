@@ -45,6 +45,9 @@ SEED_CATEGORY_BONUS = 0.05
 SEMANTIC_RELEVANCE_BLEND = 0.35
 SEMANTIC_REDUNDANCY_BLEND = 0.75
 SEMANTIC_COSINE_FLOOR = 0.35
+QUALITY_SCORE_WINDOW = 0.12
+QUALITY_SCORE_CLIFF = 0.06
+MMR_MIN_SELECTION_SCORE = 0.20
 
 DEFAULT_CATEGORY_QUOTAS = {
     CATEGORY_INNODEP: 2,
@@ -57,10 +60,10 @@ DEFAULT_CATEGORY_QUOTAS = {
 
 DEFAULT_CATEGORY_RANGES = {
     CATEGORY_INNODEP: (0, 2),
-    CATEGORY_SECURITY: (4, 8),
-    CATEGORY_INDUSTRY: (10, 15),
+    CATEGORY_SECURITY: (0, 6),
+    CATEGORY_INDUSTRY: (0, 22),
     CATEGORY_GOVERNMENT: (0, 3),
-    CATEGORY_VENTURE: (0, 4),
+    CATEGORY_VENTURE: (0, 7),
     CATEGORY_LABOR: (0, 2),
 }
 
@@ -1642,21 +1645,23 @@ def category_ranges_from_quotas(category_quotas: dict[str, int] | None) -> dict[
 
 def target_count_for_category(
     candidates: list[tuple[Article, float, dict[str, float]]],
-    minimum: int,
     maximum: int,
     threshold: float,
 ) -> int:
-    """카테고리별 최소/최대 범위 안에서 실제로 몇 개를 뽑을지 결정합니다."""
+    """상한 안에서 점수 절벽 이전의 고품질 후보 수만 반환합니다."""
     if maximum <= 0 or not candidates:
         return 0
-    candidate_count = len(candidates)
-    strong_threshold = min(1.0, threshold + 0.08)
-    strong_count = sum(1 for _, score, _ in candidates if score >= strong_threshold)
-    if strong_count >= maximum:
-        return maximum
-    if strong_count >= minimum:
-        return min(maximum, strong_count)
-    return min(maximum, candidate_count, minimum)
+
+    best_score = candidates[0][1]
+    quality_floor = max(threshold, best_score - QUALITY_SCORE_WINDOW)
+    qualified = [candidate for candidate in candidates if candidate[1] >= quality_floor]
+    limit = min(maximum, len(qualified))
+    for index in range(1, limit):
+        previous_score = qualified[index - 1][1]
+        current_score = qualified[index][1]
+        if previous_score - current_score >= QUALITY_SCORE_CLIFF:
+            return index
+    return limit
 
 
 def is_eligible_category_candidate(
@@ -1796,6 +1801,8 @@ def mmr_select(
             if mmr > best_score:
                 best_index = index
                 best_score = mmr
+        if best_score < MMR_MIN_SELECTION_SCORE:
+            break
         article, relevance, components = remaining.pop(best_index)
         selected_article = replace(
             article,
@@ -1939,10 +1946,9 @@ def select_cch_mmr_articles(
         remaining_slots = max_articles - len(selected)
         if remaining_slots <= 0:
             break
-        minimum, maximum = category_ranges.get(category, (0, 0))
+        _, maximum = category_ranges.get(category, (0, 0))
         target_count = target_count_for_category(
             scored_by_category[category],
-            minimum=minimum,
             maximum=maximum,
             threshold=threshold,
         )
@@ -1960,47 +1966,5 @@ def select_cch_mmr_articles(
         )
         selected_counts[category] += len(category_selected)
         selected.extend(category_selected)
-
-    if len(selected) < max_articles:
-        best_by_article: dict[str, tuple[str, Article, float, dict[str, float]]] = {}
-        for category, article, score, components in all_scored:
-            _, maximum = category_ranges.get(category, (0, 0))
-            if selected_counts.get(category, 0) >= maximum:
-                continue
-            if not is_eligible_category_candidate(article, category, score, components, threshold):
-                continue
-            key = article.canonical_url
-            existing = best_by_article.get(key)
-            if existing is None or score > existing[2]:
-                best_by_article[key] = (category, article, score, components)
-        fill_candidates = sorted(best_by_article.values(), key=lambda item: (-item[2], item[1].pub_date))
-        for category, article, score, components in fill_candidates:
-            if len(selected) >= max_articles:
-                break
-            if article.canonical_url in selected_urls:
-                continue
-            if is_similar_to_selected(article, selected):
-                continue
-            if category == CATEGORY_INDUSTRY:
-                company = industry_company_key(article)
-                if company and company in selected_industry_companies:
-                    continue
-            _, maximum = category_ranges.get(category, (0, 0))
-            if selected_counts.get(category, 0) >= maximum:
-                continue
-            selected.append(
-                replace(
-                    article,
-                    score=round(score, 4),
-                    category=category,
-                    reason=reason_for(article, category, components),
-                )
-            )
-            selected_urls.add(article.canonical_url)
-            if category == CATEGORY_INDUSTRY:
-                company = industry_company_key(article)
-                if company:
-                    selected_industry_companies.add(company)
-            selected_counts[category] = selected_counts.get(category, 0) + 1
 
     return selected[:max_articles]

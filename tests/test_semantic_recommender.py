@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from dataclasses import replace
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
@@ -26,6 +27,41 @@ def article(title: str, category: str = "", url: str | None = None) -> Article:
 
 
 class SemanticScoringTests(unittest.TestCase):
+    def test_target_count_stops_before_score_cliff(self) -> None:
+        candidates = [
+            (article("후보 1"), 0.82, {}),
+            (article("후보 2"), 0.79, {}),
+            (article("후보 3"), 0.76, {}),
+            (article("후보 4"), 0.61, {}),
+        ]
+
+        self.assertEqual(
+            recommender.target_count_for_category(candidates, maximum=22, threshold=0.5),
+            3,
+        )
+
+    def test_mmr_stops_when_next_candidate_has_low_marginal_value(self) -> None:
+        candidates = [
+            (article("첫 기사"), 0.8, {}),
+            (article("중복 기사"), 0.7, {}),
+        ]
+        with (
+            patch.object(recommender, "redundancy_score", return_value=1.0),
+            patch.object(recommender, "reason_for", return_value="test"),
+            patch.object(recommender, "industry_company_key", return_value=""),
+        ):
+            selected = recommender.mmr_select(
+                candidates,
+                quota=2,
+                category=CATEGORY_INDUSTRY,
+                lambda_value=0.7,
+                already_selected=set(),
+                selected_articles=[],
+                selected_industry_companies=set(),
+            )
+
+        self.assertEqual(len(selected), 1)
+
     def test_industry_accepts_company_product_and_core_technology(self) -> None:
         candidates = [
             article("구글, 국내 기업 겨냥 풀스택 AI 플랫폼 선보인다"),
@@ -190,6 +226,49 @@ class SemanticEmbeddingServiceTests(unittest.TestCase):
 
 
 class PipelineSemanticDeduplicationTests(unittest.TestCase):
+    def test_later_category_is_evaluated_before_global_limit(self) -> None:
+        security = replace(
+            article("보안 후보", CATEGORY_SECURITY, "https://example.com/security-low"),
+            score=0.6,
+        )
+        industry = replace(
+            article("산업 후보", CATEGORY_INDUSTRY, "https://example.com/industry-high"),
+            score=0.9,
+        )
+        config = SimpleNamespace(
+            max_articles=1,
+            category_quotas={},
+            keyword_weights={},
+            min_score=0.0,
+            timezone="UTC",
+            recommendation_weights={},
+            mmr_lambda=0.7,
+        )
+        collected_categories: list[str] = []
+
+        def collect_for_category(_config, category):
+            collected_categories.append(category)
+            return [security] if category == CATEGORY_SECURITY else [industry]
+
+        def select_for_category(_articles, category, **_kwargs):
+            return [security] if category == CATEGORY_SECURITY else [industry]
+
+        with (
+            patch.object(pipeline, "CATEGORY_ORDER", [CATEGORY_SECURITY, CATEGORY_INDUSTRY]),
+            patch.object(
+                pipeline,
+                "category_ranges_from_quotas",
+                return_value={CATEGORY_SECURITY: (0, 1), CATEGORY_INDUSTRY: (0, 1)},
+            ),
+            patch.object(pipeline, "collect_category_articles", side_effect=collect_for_category),
+            patch.object(pipeline, "select_category_articles", side_effect=select_for_category),
+            patch.object(pipeline, "is_semantic_duplicate", return_value=False),
+        ):
+            selected = pipeline.build_digest(config)
+
+        self.assertEqual(collected_categories, [CATEGORY_SECURITY, CATEGORY_INDUSTRY])
+        self.assertEqual([item.title for item in selected], [industry.title])
+
     def test_cross_category_duplicate_uses_backfill_candidate(self) -> None:
         security = article("공통 사건 보안 기사", CATEGORY_SECURITY, "https://example.com/security")
         duplicate = article("표현이 다른 공통 사건", CATEGORY_INDUSTRY, "https://example.com/duplicate")

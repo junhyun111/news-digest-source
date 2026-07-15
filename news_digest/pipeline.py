@@ -118,12 +118,7 @@ def build_digest(config: Config):
     category_ranges = category_ranges_from_quotas(config.category_quotas)
 
     for category in CATEGORY_ORDER:
-        remaining_slots = config.max_articles - len(selected)
-        if remaining_slots <= 0:
-            break
-
         _, category_max = category_ranges.get(category, (0, 0))
-        category_max = min(category_max, remaining_slots)
         if category_max <= 0:
             continue
 
@@ -164,6 +159,14 @@ def build_digest(config: Config):
             seen_titles.add(title_key)
             selected.append(article)
             accepted_in_category += 1
+
+    if len(selected) > config.max_articles:
+        ranked_indices = sorted(
+            range(len(selected)),
+            key=lambda index: (-selected[index].score, index),
+        )[: config.max_articles]
+        keep_indices = set(ranked_indices)
+        selected = [article for index, article in enumerate(selected) if index in keep_indices]
 
     LOGGER.info("Collected %s articles, selected %s articles", total_collected, len(selected))
     return selected
