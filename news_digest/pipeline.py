@@ -7,8 +7,10 @@ from .config import Config
 from .cch_mmr_recommender import category_ranges_from_quotas
 from .filters import normalize_title, normalize_url, select_category_articles
 from .naver import fetch_naver_news, parse_naver_response, sample_payload
+from .semantic_embeddings import ENHANCED_CATEGORIES, is_semantic_duplicate
 
 LOGGER = logging.getLogger(__name__)
+SEMANTIC_BACKFILL_CANDIDATES = 5
 
 QUERY_EXPANSIONS = {
     "ai": ["AI", "\uc778\uacf5\uc9c0\ub2a5", "\uc0dd\uc131\ud615 AI", "AI \ubc18\ub3c4\uccb4", "AI \ubcf4\uc548"],
@@ -128,27 +130,40 @@ def build_digest(config: Config):
         # 카테고리마다 검색과 추천을 따로 수행해야 quota와 필수 조건이 섞이지 않습니다.
         articles = collect_category_articles(config, category)
         total_collected += len(articles)
+        selection_limit = category_max
+        if category in ENHANCED_CATEGORIES:
+            selection_limit = min(len(articles), category_max + SEMANTIC_BACKFILL_CANDIDATES)
         category_selected = select_category_articles(
             articles,
             category=category,
             keyword_weights=config.keyword_weights,
             min_score=config.min_score,
-            max_articles=category_max,
+            max_articles=selection_limit,
             timezone=config.timezone,
             recommendation_weights=config.recommendation_weights,
-            category_quotas={category: category_max},
+            category_quotas={category: selection_limit},
             mmr_lambda=config.mmr_lambda,
         )
 
-        # 카테고리 간에도 같은 URL 또는 같은 제목의 기사는 한 번만 보냅니다.
+        # 카테고리 간 URL·제목 중복과 임베딩 의미 중복을 제거합니다.
+        accepted_in_category = 0
         for article in category_selected:
+            if accepted_in_category >= category_max:
+                break
             url_key = normalize_url(article.canonical_url)
             title_key = normalize_title(article.title)
             if url_key in seen_urls or title_key in seen_titles:
                 continue
+            if category in ENHANCED_CATEGORIES and any(
+                existing.category in ENHANCED_CATEGORIES
+                and is_semantic_duplicate(article, existing)
+                for existing in selected
+            ):
+                continue
             seen_urls.add(url_key)
             seen_titles.add(title_key)
             selected.append(article)
+            accepted_in_category += 1
 
     LOGGER.info("Collected %s articles, selected %s articles", total_collected, len(selected))
     return selected

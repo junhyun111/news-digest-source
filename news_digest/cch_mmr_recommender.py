@@ -20,6 +20,13 @@ from .categories import (
     source_name,
 )
 from .models import Article
+from .semantic_embeddings import (
+    ENHANCED_CATEGORIES,
+    is_semantic_duplicate,
+    prepare_semantic_articles,
+    semantic_category_score,
+    semantic_similarity,
+)
 from .text_similarity import lexical_cosine, title_similarity
 from .timezones import get_timezone
 
@@ -35,6 +42,9 @@ DEFAULT_WEIGHTS = {
 }
 
 SEED_CATEGORY_BONUS = 0.05
+SEMANTIC_RELEVANCE_BLEND = 0.30
+SEMANTIC_REDUNDANCY_BLEND = 0.70
+SEMANTIC_COSINE_FLOOR = 0.35
 
 DEFAULT_CATEGORY_QUOTAS = {
     CATEGORY_INNODEP: 2,
@@ -47,8 +57,8 @@ DEFAULT_CATEGORY_QUOTAS = {
 
 DEFAULT_CATEGORY_RANGES = {
     CATEGORY_INNODEP: (0, 2),
-    CATEGORY_SECURITY: (0, 4),
-    CATEGORY_INDUSTRY: (0, 12),
+    CATEGORY_SECURITY: (4, 8),
+    CATEGORY_INDUSTRY: (10, 15),
     CATEGORY_GOVERNMENT: (0, 3),
     CATEGORY_VENTURE: (0, 4),
     CATEGORY_LABOR: (0, 2),
@@ -238,7 +248,6 @@ CATEGORY_KEYWORDS = {
         "NVR",
         "ONVIF",
         "엣지 AI",
-        "사이버보안",
         "제로트러스트",
         "시큐어",
         "개인정보보호",
@@ -1415,6 +1424,7 @@ def relevance_score(
             "source": 0.0,
             "entity": 0.0,
             "language": 0.0,
+            "semantic": 0.0,
             "seed": 0.0,
         }
 
@@ -1430,6 +1440,9 @@ def relevance_score(
         + weights["entity"] * entity
         + weights["language"] * language
     )
+    semantic = semantic_category_score(article, category)
+    if semantic is not None:
+        total = (1.0 - SEMANTIC_RELEVANCE_BLEND) * total + SEMANTIC_RELEVANCE_BLEND * semantic
     if entity > 0:
         total += 0.30
     if category == CATEGORY_GOVERNMENT and is_government_priority_article(article):
@@ -1442,6 +1455,7 @@ def relevance_score(
         "source": source,
         "entity": entity,
         "language": language,
+        "semantic": semantic or 0.0,
         "seed": seed,
     }
     return round(min(1.0, total), 4), components
@@ -1476,6 +1490,8 @@ def reason_for(article: Article, category: str, components: dict[str, float]) ->
         parts.append("이노뎁 관련성이 높음")
     if components.get("language", 0.0) >= 0.75:
         parts.append("한글 제목 기사")
+    if components.get("semantic", 0.0) >= 0.70:
+        parts.append("과거 관련 기사와 의미가 유사함")
     return "; ".join(parts[:3])
 
 
@@ -1550,7 +1566,26 @@ def is_eligible_category_candidate(
 
 
 def is_similar_to_selected(article: Article, selected_articles: list[Article]) -> bool:
-    return any(title_similarity(article.title, selected.title) >= 0.72 for selected in selected_articles)
+    return any(
+        title_similarity(article.title, selected.title) >= 0.72
+        or is_semantic_duplicate(article, selected)
+        for selected in selected_articles
+    )
+
+
+def redundancy_score(left: Article, right: Article) -> float:
+    lexical = lexical_cosine(article_text(left), article_text(right))
+    semantic = semantic_similarity(left, right)
+    if semantic is None:
+        return lexical
+    normalized_semantic = max(
+        0.0,
+        min(1.0, (semantic - SEMANTIC_COSINE_FLOOR) / (1.0 - SEMANTIC_COSINE_FLOOR)),
+    )
+    return (
+        (1.0 - SEMANTIC_REDUNDANCY_BLEND) * lexical
+        + SEMANTIC_REDUNDANCY_BLEND * normalized_semantic
+    )
 
 
 def better_duplicate(left: Article, right: Article) -> Article:
@@ -1620,7 +1655,9 @@ def mmr_select(
             redundancy = 0.0
             comparison_articles = selected_articles + selected
             if comparison_articles:
-                redundancy = max(lexical_cosine(article_text(article), article_text(existing)) for existing in comparison_articles)
+                redundancy = max(
+                    redundancy_score(article, existing) for existing in comparison_articles
+                )
             mmr = lambda_value * relevance - (1.0 - lambda_value) * redundancy
             if mmr > best_score:
                 best_index = index
@@ -1686,6 +1723,8 @@ def select_cch_mmr_articles(
         and not is_general_government_noise(article)
         and not has_any_keyword(article, GOVERNMENT_EXCLUDE_KEYWORDS)
     ]
+    if any(category in ENHANCED_CATEGORIES for category in active_categories):
+        prepare_semantic_articles(unique_articles)
 
     scored_by_category: dict[str, list[tuple[Article, float, dict[str, float]]]] = {category: [] for category in active_categories}
     all_scored: list[tuple[str, Article, float, dict[str, float]]] = []
