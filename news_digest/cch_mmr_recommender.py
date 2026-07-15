@@ -26,6 +26,8 @@ from .recommendation_rules import (
     SEMANTIC_COSINE_FLOOR,
     QUALITY_SCORE_WINDOW,
     QUALITY_SCORE_CLIFF,
+    CATEGORY_MIN_SCORE_FLOORS,
+    CATEGORY_QUALITY_SCORE_WINDOWS,
     DEFAULT_CATEGORY_RANGES,
     DEFAULT_GLOBAL_TITLE_WEIGHTS,
     DEFAULT_CATEGORY_TITLE_WEIGHTS,
@@ -560,14 +562,15 @@ def target_count_for_category(
     candidates: list[tuple[Article, float, dict[str, float]]],
     maximum: int,
     threshold: float,
+    quality_window: float = QUALITY_SCORE_WINDOW,
 ) -> int:
     """상한 안에서 점수 절벽 이전의 고품질 후보 수만 반환합니다."""
     if maximum <= 0 or not candidates:
         return 0
 
     best_score = candidates[0][1]
-    quality_floor = max(threshold, best_score - QUALITY_SCORE_WINDOW)
-    qualified = [candidate for candidate in candidates if candidate[1] >= quality_floor]
+    quality_floor = max(threshold, best_score - quality_window)
+    qualified = [candidate for candidate in candidates if candidate[1] + 1e-9 >= quality_floor]
     limit = min(maximum, len(qualified))
     for index in range(1, limit):
         previous_score = qualified[index - 1][1]
@@ -575,6 +578,11 @@ def target_count_for_category(
         if previous_score - current_score >= QUALITY_SCORE_CLIFF:
             return index
     return limit
+
+
+def selection_threshold_for_category(category: str, configured_threshold: float) -> float:
+    """전역 최소 점수와 카테고리별 품질 하한 중 더 엄격한 값을 사용합니다."""
+    return max(configured_threshold, CATEGORY_MIN_SCORE_FLOORS.get(category, 0.0))
 
 
 def log_score_distribution(category: str, scores: list[float]) -> None:
@@ -808,7 +816,11 @@ def select_cch_mmr_articles(
     # 정규화는 relevance_score에서 사용 가능한 feature만 대상으로 수행합니다.
     active_weights = {**DEFAULT_WEIGHTS, **(weights or {})}
     category_ranges = category_ranges_from_quotas(category_quotas)
-    threshold = threshold_from_min_score(min_score)
+    configured_threshold = threshold_from_min_score(min_score)
+    category_thresholds = {
+        category: selection_threshold_for_category(category, configured_threshold)
+        for category in active_categories
+    }
     # 명백한 제외 대상과 중복 기사를 먼저 걷어낸 뒤 카테고리별 점수를 계산합니다.
     unique_articles = [
         article
@@ -841,7 +853,9 @@ def select_cch_mmr_articles(
 
         if target_categories is not None:
             for category, _, score, components in article_scores:
-                if is_eligible_category_candidate(article, category, score, components, threshold):
+                if is_eligible_category_candidate(
+                    article, category, score, components, category_thresholds[category]
+                ):
                     scored_by_category[category].append((article, score, components))
             continue
 
@@ -852,7 +866,7 @@ def select_cch_mmr_articles(
             CATEGORY_INNODEP,
             innodep_score[2],
             innodep_score[3],
-            threshold,
+            category_thresholds[CATEGORY_INNODEP],
         ):
             best_category, _, best_score, best_components = innodep_score
         security_score = next(item for item in article_scores if item[0] == CATEGORY_SECURITY)
@@ -861,7 +875,7 @@ def select_cch_mmr_articles(
             CATEGORY_SECURITY,
             security_score[2],
             security_score[3],
-            threshold,
+            category_thresholds[CATEGORY_SECURITY],
         ):
             best_category, _, best_score, best_components = security_score
         government_score = next(item for item in article_scores if item[0] == CATEGORY_GOVERNMENT)
@@ -871,14 +885,14 @@ def select_cch_mmr_articles(
             CATEGORY_VENTURE,
             venture_score[2],
             venture_score[3],
-            threshold,
+            category_thresholds[CATEGORY_VENTURE],
         )
         government_is_eligible = is_eligible_category_candidate(
             government_score[1],
             CATEGORY_GOVERNMENT,
             government_score[2],
             government_score[3],
-            threshold,
+            category_thresholds[CATEGORY_GOVERNMENT],
         )
         prefer_venture_over_government = venture_is_eligible and (
             article.seed_category == CATEGORY_VENTURE
@@ -889,7 +903,13 @@ def select_cch_mmr_articles(
             best_category, _, best_score, best_components = government_score
         if best_category != CATEGORY_INNODEP and prefer_venture_over_government:
             best_category, _, best_score, best_components = venture_score
-        if is_eligible_category_candidate(article, best_category, best_score, best_components, threshold):
+        if is_eligible_category_candidate(
+            article,
+            best_category,
+            best_score,
+            best_components,
+            category_thresholds[best_category],
+        ):
             scored_by_category[best_category].append((article, best_score, best_components))
 
     for category in active_categories:
@@ -909,7 +929,8 @@ def select_cch_mmr_articles(
         target_count = target_count_for_category(
             scored_by_category[category],
             maximum=maximum,
-            threshold=threshold,
+            threshold=category_thresholds[category],
+            quality_window=CATEGORY_QUALITY_SCORE_WINDOWS.get(category, QUALITY_SCORE_WINDOW),
         )
         target_count = min(target_count, remaining_slots)
         if target_count <= 0:

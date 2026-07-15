@@ -45,6 +45,36 @@ class SemanticScoringTests(unittest.TestCase):
             3,
         )
 
+    def test_stricter_quality_window_selects_fewer_candidates(self) -> None:
+        candidates = [
+            (article("후보 1"), 0.90, {}),
+            (article("후보 2"), 0.855, {}),
+            (article("후보 3"), 0.84, {}),
+        ]
+
+        self.assertEqual(
+            recommender.target_count_for_category(
+                candidates, maximum=3, threshold=0.5, quality_window=0.06
+            ),
+            3,
+        )
+        self.assertEqual(
+            recommender.target_count_for_category(
+                candidates, maximum=3, threshold=0.5, quality_window=0.04
+            ),
+            1,
+        )
+
+    def test_government_and_labor_have_stricter_score_floor(self) -> None:
+        self.assertEqual(
+            recommender.selection_threshold_for_category(CATEGORY_GOVERNMENT, 0.5),
+            0.7,
+        )
+        self.assertEqual(
+            recommender.selection_threshold_for_category(CATEGORY_INDUSTRY, 0.5),
+            0.5,
+        )
+
     def test_score_distribution_reports_saturation_ratio(self) -> None:
         with self.assertLogs(recommender.LOGGER, level="INFO") as captured:
             recommender.log_score_distribution("테스트", [0.2, 0.8, 1.0, 1.1])
