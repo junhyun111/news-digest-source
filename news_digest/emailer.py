@@ -78,7 +78,7 @@ def render_digest_html(
         '<meta charset="utf-8">',
         '<meta name="viewport" content="width=device-width, initial-scale=1">',
         "<style>",
-        "@media only screen and (max-width:640px){.email-shell{width:100%!important}.outer-pad{padding:0!important}.hero-pad{padding:26px 22px!important}.content-pad{padding:16px 10px!important}.article-title{font-size:16px!important}.section-title{font-size:18px!important}}",
+        "@media only screen and (max-width:640px){.email-shell{width:100%!important}.outer-pad{padding:0!important}.hero-pad{padding:26px 22px!important}.content-pad{padding:16px 10px!important}.hero-title{font-size:26px!important;line-height:33px!important}.article-cell{padding:10px 14px!important}.article-title{font-size:13px!important;line-height:20px!important}.section-title{font-size:18px!important}}",
         "</style>",
         "</head>",
         '<body style="margin:0;padding:0;background-color:#f3f5f8;font-family:Arial,\'Apple SD Gothic Neo\',\'Malgun Gothic\',sans-serif;color:#141b2d;">',
@@ -87,7 +87,7 @@ def render_digest_html(
         '<table role="presentation" class="email-shell" width="760" cellspacing="0" cellpadding="0" border="0" style="width:760px;max-width:760px;background-color:#ffffff;border:1px solid #dfe5ed;box-shadow:0 8px 24px rgba(15,35,70,.10);">',
         '<tr><td class="hero-pad" bgcolor="#092653" style="padding:36px 48px 32px;background-color:#092653;background-image:linear-gradient(135deg,#123c7a 0%,#061b3d 100%);">',
         '<div style="font-size:11px;line-height:18px;letter-spacing:2.2px;color:#69b8ff;font-weight:600;">INNODEP DAILY BRIEF</div>',
-        '<div style="margin-top:8px;font-size:32px;line-height:40px;letter-spacing:-.8px;color:#ffffff;font-weight:700;">TODAY NEWS BRIEF</div>',
+        '<div class="hero-title" style="margin-top:8px;font-size:32px;line-height:40px;letter-spacing:-.8px;color:#ffffff;font-weight:700;">TODAY NEWS BRIEF</div>',
         f'<div style="margin-top:6px;font-size:12px;line-height:25px;color:#9dccff;font-weight:500;">{localized_now.year}년 {localized_now.month}월 {localized_now.day}일</div>',
         f'<div style="margin-top:16px;font-size:13px;line-height:21px;color:#b7d5f4;font-weight:400;">{escape(category_summary)}</div>',
         "</td></tr>",
@@ -125,7 +125,7 @@ def render_digest_html(
             parts.extend(
                 [
                     '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;margin:0 0 12px;border:1px solid #dfe3e8;background-color:#ffffff;">',
-                    '<tr><td style="padding:17px 18px 14px;">',
+                    '<tr><td class="article-cell" style="padding:17px 18px 14px;">',
                     f'<div class="article-title" style="font-family:\'Malgun Gothic\',\'맑은 고딕\',Arial,sans-serif;font-size:14px;line-height:24px;letter-spacing:-.1px;font-weight:600;white-space:normal;overflow:visible;text-overflow:clip;word-break:keep-all;overflow-wrap:anywhere;"><a href="{url}" style="display:block;color:#141b2d;text-decoration:none;white-space:normal;overflow:visible;text-overflow:clip;">{title}</a></div>',
                     "</td></tr></table>",
                 ]
