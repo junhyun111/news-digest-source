@@ -1,6 +1,8 @@
 .env
 .agents
 __pycache__
+*.py[cod]
 .venv
-.model\output
-.source_data
+model/output/
+source_data/
+.ipynb_checkpoints/

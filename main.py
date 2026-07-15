@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import sys
 
-from job import load_prepared_digest, run_job, save_prepared_digest
+from job import run_job
 
 
 def parse_args() -> argparse.Namespace:

@@ -5,48 +5,13 @@ import logging
 from .categories import CATEGORY_ORDER
 from .config import Config
 from .cch_mmr_recommender import category_ranges_from_quotas
-from .filters import normalize_title, normalize_url, select_category_articles
+from .filters import select_category_articles
 from .naver import fetch_naver_news, parse_naver_response, sample_payload
+from .normalization import normalize_title, normalize_url
 from .semantic_embeddings import ENHANCED_CATEGORIES, is_semantic_duplicate
 
 LOGGER = logging.getLogger(__name__)
 SEMANTIC_BACKFILL_CANDIDATES = 5
-
-QUERY_EXPANSIONS = {
-    "ai": ["AI", "\uc778\uacf5\uc9c0\ub2a5", "\uc0dd\uc131\ud615 AI", "AI \ubc18\ub3c4\uccb4", "AI \ubcf4\uc548"],
-    "semiconductor": ["semiconductor", "\ubc18\ub3c4\uccb4", "AI \ubc18\ub3c4\uccb4", "HBM", "\uc5d4\ube44\ub514\uc544"],
-    "security": ["security", "\ubcf4\uc548", "AI \ubcf4\uc548", "\uc0ac\uc774\ubc84 \ubcf4\uc548", "\uc815\ubcf4\ubcf4\ud638"],
-    "\uc778\uacf5\uc9c0\ub2a5": ["\uc778\uacf5\uc9c0\ub2a5", "AI", "\uc0dd\uc131\ud615 AI"],
-    "\ubc18\ub3c4\uccb4": ["\ubc18\ub3c4\uccb4", "semiconductor", "HBM", "\uc5d4\ube44\ub514\uc544"],
-    "\ubcf4\uc548": ["\ubcf4\uc548", "security", "AI \ubcf4\uc548", "\uc0ac\uc774\ubc84 \ubcf4\uc548"],
-}
-
-
-def expand_queries(queries: list[str]) -> list[str]:
-    expanded: list[str] = []
-    seen: set[str] = set()
-    for query in queries:
-        candidates = QUERY_EXPANSIONS.get(query.strip().lower(), [query])
-        for candidate in candidates:
-            key = candidate.strip().lower()
-            if key and key not in seen:
-                seen.add(key)
-                expanded.append(candidate.strip())
-    return expanded
-
-
-def iter_seed_queries(config: Config) -> list[tuple[str, str]]:
-    seeded_queries: list[tuple[str, str]] = []
-    seen: set[tuple[str, str]] = set()
-    for category in CATEGORY_ORDER:
-        for query in config.category_queries.get(category, []):
-            normalized_query = query.strip()
-            key = (category, normalized_query.casefold())
-            if normalized_query and key not in seen:
-                seen.add(key)
-                seeded_queries.append((category, normalized_query))
-    return seeded_queries
-
 
 def iter_category_queries(config: Config, category: str) -> list[str]:
     queries: list[str] = []
@@ -58,26 +23,6 @@ def iter_category_queries(config: Config, category: str) -> list[str]:
             seen.add(key)
             queries.append(normalized_query)
     return queries
-
-
-def collect_articles(config: Config):
-    articles = []
-    if config.use_sample_data:
-        LOGGER.info("Using sample news data")
-        return parse_naver_response(sample_payload(config.timezone), query="sample", timezone=config.timezone)
-
-    for seed_category, query in iter_seed_queries(config):
-        LOGGER.info("Fetching Naver news for seed_category=%s query=%s", seed_category, query)
-        payload = fetch_naver_news(config.naver_client_id, config.naver_client_secret, query)
-        articles.extend(
-            parse_naver_response(
-                payload,
-                query=query,
-                timezone=config.timezone,
-                seed_category=seed_category,
-            )
-        )
-    return articles
 
 
 def collect_category_articles(config: Config, category: str):

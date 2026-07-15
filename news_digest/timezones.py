@@ -5,6 +5,8 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 
 def get_timezone(name: str) -> tzinfo:
+    if name.casefold() in {"utc", "etc/utc", "z"}:
+        return timezone.utc
     try:
         return ZoneInfo(name)
     except ZoneInfoNotFoundError:

@@ -456,14 +456,17 @@ PC 전원이 꺼져 있으면 작업 스케줄러가 실행할 수 없습니다.
 | `news_digest/settings.py` | 기본 검색어, 점수, 기사 수, SMTP 및 추천 기본값 정의 |
 | `news_digest/naver.py` | 네이버 뉴스 API 호출, 호출 간격 제한, 429 재시도, 응답 파싱 |
 | `news_digest/pipeline.py` | 카테고리별 수집과 추천을 실행하고 카테고리 간 중복 제거 |
+| `news_digest/recommendation_rules.py` | 카테고리별 키워드, 제외 조건, 가중치 및 추천 임계값 정의 |
 | `news_digest/cch_mmr_recommender.py` | 규칙·최신성·출처·엔티티·의미 점수와 MMR을 이용해 관련성과 다양성을 함께 최적화 |
 | `news_digest/semantic_embeddings.py` | 업계 동향·보안·벤처/금융 기준 벡터 로딩, 신규 기사 배치 임베딩과 의미 유사도 계산 |
-| `news_digest/filters.py` | 날짜 범위, URL/제목 정규화, 중복 제거 및 키워드 기반 보충 선택 |
+| `news_digest/filters.py` | 날짜 범위, 중복 제거 및 키워드 기반 보충 선택 |
+| `news_digest/normalization.py` | 추적 파라미터를 제거한 URL과 제목 정규화 |
 | `news_digest/categories.py` | 카테고리 순서, 분류 키워드, 언론사 표시 이름 정의 |
 | `news_digest/emailer.py` | 텍스트/HTML 본문과 제목을 만들고 STARTTLS SMTP로 발송 |
 | `news_digest/models.py` | 기사 데이터 모델 정의 |
 | `news_digest/text_similarity.py` | 기사 간 텍스트 및 제목 유사도 계산 |
 | `news_digest/keyword_fallback.py` | 주 추천 결과가 없을 때 사용할 키워드 점수 계산 |
 | `news_digest/timezones.py` | 시간대 객체 생성과 호환 처리 |
+| `scripts/clear_notebook_outputs.py` | 노트북의 실행 번호·저장된 출력·로컬 커널 정보를 정리 |
 
 기본 설정을 바꾸지 않고 운영별 값만 조정하려면 코드보다 Lambda 환경 변수 또는 로컬 `.env`를 사용하는 것이 좋습니다.
