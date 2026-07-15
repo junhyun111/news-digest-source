@@ -1,0 +1,325 @@
+{
+  "model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+  "dimension": 384,
+  "weights": {
+    "title": 0.7,
+    "summary": 0.3
+  },
+  "files": {
+    "title": "news_production_wages_title_embeddings.npy",
+    "summary": "news_production_wages_summary_embeddings.npy",
+    "combined": "news_production_wages_embeddings.npy"
+  },
+  "rows": [
+    {
+      "source_row": 0,
+      "article_id": "5d745cbac20af0ff89aac3d0",
+      "title": "[기획] 주5일 일해도 ‘4일제 국가’의 절반… 韓 노동생산성 민낯",
+      "legacy_category": "생산/임금 기사",
+      "article_link": "https://www.dt.co.kr/article/12019437?ref=naver",
+      "source_file": "news_production_wages.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 1,
+      "article_id": "24b214f131431a8b67c0dec8",
+      "title": "당정, ‘형법상 배임죄 폐지’ 공식화",
+      "legacy_category": "생산/임금 기사",
+      "article_link": "https://www.khan.co.kr/article/202509302132015",
+      "source_file": "news_production_wages.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 2,
+      "article_id": "23c15cb6a0f4a6df40032be6",
+      "title": "\"주휴수당은 韓·멕시코 등에만 있는 기형적 제도\"",
+      "legacy_category": "생산/임금 기사",
+      "article_link": "https://www.hankyung.com/article/2025100997301",
+      "source_file": "news_production_wages.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 3,
+      "article_id": "81e7d572b180c15bf888250a",
+      "title": "내년 구직급여 상한액 6만8100원…2100원 인상",
+      "legacy_category": "생산/임금 기사",
+      "article_link": "https://www.hani.co.kr/arti/society/labor/1221927.html",
+      "source_file": "news_production_wages.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 4,
+      "article_id": "d29c00529284f37ba35e56f0",
+      "title": "KDI “초단시간 근로 부채질, 주휴수당 재검토 필요”",
+      "legacy_category": "생산/임금 기사",
+      "article_link": "https://www.donga.com/news/Economy/article/all/20251224/133033682/2",
+      "source_file": "news_production_wages.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 5,
+      "article_id": "8d1af57b58074e60237fc605",
+      "title": "[단독] 비정규직 임금인상 본격화… 정부 TF 꾸렸다",
+      "legacy_category": "생산/임금 기사",
+      "article_link": "http://www.fnnews.com/news/202601181822339029",
+      "source_file": "news_production_wages.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 6,
+      "article_id": "ceddc8963ac5910671144e88",
+      "title": "노동계, 최저임금 인상 압박…20%대 요구 가능성도",
+      "legacy_category": "생산/임금 기사",
+      "article_link": "https://www.sedaily.com/article/20016600?ref=becu",
+      "source_file": "news_production_wages.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 7,
+      "article_id": "583cd9ee14fb29ea46aba9a5",
+      "title": "배달라이더도 포함 될까?… 내년도 최저임금 심의 21일 첫 회의",
+      "legacy_category": "생산/임금 기사",
+      "article_link": "http://www.fnnews.com/news/202604191937095149",
+      "source_file": "news_production_wages.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 8,
+      "article_id": "aba9cb0f280da0c1d4c0e375",
+      "title": "공공 비정규직 한달만 일해도 '퇴직금 명목' 38만원 수당",
+      "legacy_category": "생산/임금 기사",
+      "article_link": "http://www.fnnews.com/news/202604281840395959",
+      "source_file": "news_production_wages.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 9,
+      "article_id": "e0e220e3d420db9062272e67",
+      "title": "법원 \"파업해도 생산 차질 안돼\"…반도체 특수성에 엄격한 법리 판단",
+      "legacy_category": "생산/임금 기사",
+      "article_link": "https://www.hankyung.com/article/2026051844891",
+      "source_file": "news_production_wages.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 10,
+      "article_id": "17078b6744ef5411a44aee20",
+      "title": "‘성과급으로 인질극 벌이나’ 비판에도… 노조 “이번에 꺾이면 기회 없다” 판단",
+      "legacy_category": "생산/임금 기사",
+      "article_link": "http://www.chosun.com/economy/tech_it/2026/05/20/IM7E6OH4SREN7MU6NUN4HQOJFE/",
+      "source_file": "news_production_wages.csv",
+      "fetch_status": "incomplete",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 11,
+      "article_id": "3dd78c7118d4b775702d1991",
+      "title": "최저임금委 회의서도 '삼성 성과급' 갑론을박",
+      "legacy_category": "생산/임금 기사",
+      "article_link": "https://www.hankyung.com/article/2026052600131",
+      "source_file": "news_production_wages.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 12,
+      "article_id": "53b6ce1448accd54ade037ef",
+      "title": "勞 \"라이더도 최저임금\"vs 使 \"업종별 차등\" - 매일경제",
+      "legacy_category": "생산/임금 기사",
+      "article_link": "https://www.mk.co.kr/news/society/12058055",
+      "source_file": "news_production_wages.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 13,
+      "article_id": "57732bf5aac1ed25002e5fc9",
+      "title": "경총 “최저임금, 업종별 구분해 적용해야”",
+      "legacy_category": "생산/임금 기사",
+      "article_link": "https://www.seoul.co.kr/news/economy/2026/06/14/20260614500077",
+      "source_file": "news_production_wages.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 14,
+      "article_id": "96d7b810b396993230fa926f",
+      "title": "\"물가 77% 오를때 최저임금 437% 올라…업종별 구분적용해야\"",
+      "legacy_category": "생산/임금 기사",
+      "article_link": "https://www.edaily.co.kr/news/newspath.asp?newsid=01548166645481720",
+      "source_file": "news_production_wages.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 15,
+      "article_id": "fc620a1d8a7e7464cb3aa7eb",
+      "title": "노동계, 내년도 최저임금 1만2000원 요구",
+      "legacy_category": "생산/임금 기사",
+      "article_link": "https://www.kmib.co.kr/article/view.asp?arcid=1781508267",
+      "source_file": "news_production_wages.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 16,
+      "article_id": "843ec332ad00d4300468e153",
+      "title": "최저임금 '업종별 차등적용' 논의…\"자영업자 못버텨\"vs\"양극화 심화\"",
+      "legacy_category": "생산/임금 기사",
+      "article_link": "https://www.edaily.co.kr/news/newspath.asp?newsid=04788806645482376",
+      "source_file": "news_production_wages.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 17,
+      "article_id": "28bcce7f955d83f11a3773aa",
+      "title": "최저임금 업종별 차등화 '부결'",
+      "legacy_category": "생산/임금 기사",
+      "article_link": "https://www.hankyung.com/article/2026061854501",
+      "source_file": "news_production_wages.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 18,
+      "article_id": "43caa6090901962e5fada57e",
+      "title": "韓 최저임금, G7 대비 20% 높지만..생산성은 30% 낮다",
+      "legacy_category": "생산/임금 기사",
+      "article_link": "http://www.fnnews.com/news/202606211304356176",
+      "source_file": "news_production_wages.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 19,
+      "article_id": "a7be1b6a350eb26ed4c81c4c",
+      "title": "소상공인 87% “최저임금 부담 커”…“8500~9000원이 적정”",
+      "legacy_category": "생산/임금 기사",
+      "article_link": "https://www.sedaily.com/article/20058253",
+      "source_file": "news_production_wages.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 20,
+      "article_id": "d0e1c1356a0eb186ae0a7446",
+      "title": "노정관계 회복이냐, 물가 잡기냐… 딜레마에 빠진 李정부 [최저임금 인상폭 논란 (중)]",
+      "legacy_category": "생산/임금 기사",
+      "article_link": "http://www.fnnews.com/news/202606221900309237",
+      "source_file": "news_production_wages.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 21,
+      "article_id": "3a648bd9b56241f3de91edfc",
+      "title": "勞\"1만2천원\" 使 \"동결\"…최저임금 신경전 - 매일경제",
+      "legacy_category": "생산/임금 기사",
+      "article_link": "https://www.mk.co.kr/article/12081171",
+      "source_file": "news_production_wages.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 22,
+      "article_id": "6b9f2e955f7c06e717f36243",
+      "title": "‘사장님’ 3명 중 1명, 매달 최저임금도 못 번다",
+      "legacy_category": "생산/임금 기사",
+      "article_link": "https://www.kmib.co.kr/article/view.asp?arcid=1782202417",
+      "source_file": "news_production_wages.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 23,
+      "article_id": "490fa74675f4811281c1ff09",
+      "title": "노사, 최저임금 줄다리기에…법정 심의 시한 초과 가시화",
+      "legacy_category": "생산/임금 기사",
+      "article_link": "https://www.newstomato.com/ReadNews.aspx?no=1305214",
+      "source_file": "news_production_wages.csv",
+      "fetch_status": "incomplete",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 24,
+      "article_id": "5d63560f8a8702592db2a6f0",
+      "title": "중소제조업 평균 일급 12만원 돌파… 중소기업계 “최저임금 동결해야”",
+      "legacy_category": "생산/임금 기사",
+      "article_link": "http://www.viva100.com/article/20260629500484",
+      "source_file": "news_production_wages.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 25,
+      "article_id": "ff77fb55b0988760319fa62e",
+      "title": "올해도 시한 넘긴 최저임금… “노사 줄다리기 38년 구조 바꿔야”",
+      "legacy_category": "생산/임금 기사",
+      "article_link": "https://www.donga.com/news/article/all/20260630/134205322/2",
+      "source_file": "news_production_wages.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 26,
+      "article_id": "3d135955091bb8840fe2f0a7",
+      "title": "최저임금 2차 수정안 격차 1540원",
+      "legacy_category": "생산/임금 기사",
+      "article_link": "https://www.segye.com/newsView/20260630516938",
+      "source_file": "news_production_wages.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 27,
+      "article_id": "7dd583ae77deae45f6796250",
+      "title": "\"최저임금 또 올리면 물가에 기름 붓는 격\"",
+      "legacy_category": "생산/임금 기사",
+      "article_link": "https://www.hankyung.com/article/2026070227121",
+      "source_file": "news_production_wages.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 28,
+      "article_id": "ba1ba8cc831fa44a8582fe45",
+      "title": "\"1만1800원 대 1만390원\"...고작 130원 좁혀진 '최저임금'",
+      "legacy_category": "생산/임금 기사",
+      "article_link": "https://www.newstomato.com/ReadNews.aspx?no=1306021",
+      "source_file": "news_production_wages.csv",
+      "fetch_status": "incomplete",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 29,
+      "article_id": "b5af3ee768c95ce659d87ed0",
+      "title": "내년 최저임금, 노사 합의·공익위원 선택 변수…3가지 포인트는? - 머니투데이",
+      "legacy_category": "생산/임금 기사",
+      "article_link": "https://www.mt.co.kr/economy/2026/07/05/2026070315445173317",
+      "source_file": "news_production_wages.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 30,
+      "article_id": "8446abb157b81b84d60303f7",
+      "title": "내년 최저임금 노사 격차 '990원' 남았다 - 매일경제",
+      "legacy_category": "생산/임금 기사",
+      "article_link": "https://www.mk.co.kr/news/society/12092644",
+      "source_file": "news_production_wages.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    }
+  ]
+}

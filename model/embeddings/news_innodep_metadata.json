@@ -1,0 +1,405 @@
+{
+  "model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+  "dimension": 384,
+  "weights": {
+    "title": 0.7,
+    "summary": 0.3
+  },
+  "files": {
+    "title": "news_innodep_title_embeddings.npy",
+    "summary": "news_innodep_summary_embeddings.npy",
+    "combined": "news_innodep_embeddings.npy"
+  },
+  "rows": [
+    {
+      "source_row": 0,
+      "article_id": "65974866965530b82f03e006",
+      "title": "[2025 AI 영상분석·VMS 제품 & 솔루션 리포트] 스마트 보안을 이끄는 AI와 VMS의 협업",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "http://www.boannews.com/media/view.asp?idx=138972",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 1,
+      "article_id": "9d0f4cc03a9ccadd1d70f9d9",
+      "title": "이노뎁-엑스게이트, 영상관제 분야 양자보안기술 적용 협력을 위한 MOU 체결",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "https://www.etnews.com/20250903000416",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 2,
+      "article_id": "2e7c3a7e98521902a58899b7",
+      "title": "크랜베리, 글로벌 파트너와 함께하는 ‘CRANBERRY TECH SUMMIT 2025’ 개최",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "http://www.boannews.com/media/view.asp?idx=139090",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 3,
+      "article_id": "d3f34ace57f36b916ddb8300",
+      "title": "이노뎁, 'K-Girls Day'에서 AI·보안분야 진로 멘토링 진행",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "https://www.etnews.com/20251020000175",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 4,
+      "article_id": "aa69c2ef2cf0276ae707d22d",
+      "title": "AI로 CCTV 분석해 아동학대 가려낸다…국제치안산업대전 개막 | 연합뉴스",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "https://www.yna.co.kr/view/AKR20251022026200004?input=1195m",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 5,
+      "article_id": "e41e51d8bd7a67022c4036a0",
+      "title": "[르포]\"S자 걸음 포착해 절도범 지목\"…AI 입힌 치안 기술 주목",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "http://www.edaily.co.kr/news/newspath.asp?newsid=04241046642335544",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 6,
+      "article_id": "9d7c364352d700b880af55dd",
+      "title": "이노뎁 이성진 대표, 치안산업대상 수상…중남미 치안 솔루션 공로 인정 - 머니투데이",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "https://www.mt.co.kr/stock/2025/10/27/2025102710374384719",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 7,
+      "article_id": "bef76c5664eacffd91687d81",
+      "title": "이노뎁 이성진 대표, 국제치안산업대전 대상 수상…“AI통해 안전한 대한민국 전 세계에 소개할 것”",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "https://www.etnews.com/20251027000197",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 8,
+      "article_id": "ec9f186af0fa052a85bc5d87",
+      "title": "광주시 “AI기반 CCTV관제 고도화로 안전도시 강화”",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "https://www.etnews.com/20251030000064",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 9,
+      "article_id": "d5ba7bb17294f1dc44383a91",
+      "title": "[제12회 대한민국 SW제품 품질대상]최우수상-이노뎁 'IOIE v2.0'",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "https://www.etnews.com/20251124000405",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 10,
+      "article_id": "7128d7b3fb5b453c864a4b01",
+      "title": "전북대, 지역기관·기업과 손잡고 '거점국립대 육성' 본격화",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "https://www.newsis.com/view/NISX20251128_0003421454",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 11,
+      "article_id": "a5be6a101371ff1d6b9a9b8e",
+      "title": "[소프트웨이브 2025]SW품질우수 제품관, 국산 SW 최고 품질 한자리에",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "https://www.etnews.com/20251203000278",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 12,
+      "article_id": "2cf98484172a1cb2d82b79ee",
+      "title": "배경훈 부총리 “내년 정보보호 예산 대폭 증액”... 국민은행, 정보보호 대상 수상",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "http://www.boannews.com/media/view.asp?idx=140835",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 13,
+      "article_id": "7203ba9dbb3fdf24c0dc4da1",
+      "title": "[2025 우수 정보보호 기술 지정 그 후]성장세 이어간 수산아이앤티…수자원공사 OT 책임지는 센스톤",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "https://www.etnews.com/20251219000111",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 14,
+      "article_id": "7dc9181771217158d93f6a0e",
+      "title": "[2025 우수 정보보호 기술 지정 그 후]이노뎁, 해외 공공 관제·리테일 보안 시장 공략",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "https://www.etnews.com/20251219000086",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 15,
+      "article_id": "efb7521a56605093156b35cc",
+      "title": "[2025 보안 사고·이슈 결산-9] AI와 영상보안의 전환점, 카메라가 ‘맥락’을 읽다",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "http://www.boannews.com/media/view.asp?idx=140821",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 16,
+      "article_id": "a929b734c31fb6b7867fcd57",
+      "title": "이노뎁, 국가 AI 전략의 핵심 '데이터 인프라' 플레이어…공공 1위 레퍼런스 강점 - 머니투데이",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "https://www.mt.co.kr/stock/2026/01/07/2026010707381242319",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 17,
+      "article_id": "67f71ca645872392c177b789",
+      "title": "이노뎁, SK 출신 안태호 사장 CAO 영입",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "https://www.newsis.com/view/NISX20260129_0003495015",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 18,
+      "article_id": "dfe0648a280b0c1233f25676",
+      "title": "이노뎁, 광주 첨단3지구 스마트서비스 구축사업 수주 - 머니투데이",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "https://www.mt.co.kr/stock/2026/02/05/2026020515125031052",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 19,
+      "article_id": "d49448accb92f82da5d2f98d",
+      "title": "[2026 보안 시장 백서] VMS의 기능 발전은? 재난·위험 대응 중심으로 확장 기대",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "http://www.boannews.com/media/view.asp?idx=142128",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 20,
+      "article_id": "137ccceb9f0b91b60719f2c5",
+      "title": "이노뎁, 실적 부담에도 재무안정성 유지... 공공·플랫폼·수출 ‘3축 전략’",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "http://www.boannews.com/media/view.asp?idx=142421",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 21,
+      "article_id": "2e2bae205a8042051bed8b92",
+      "title": "한국첨단안전산업협회, 제11차 정기총회 및 제19차 첨단안전 기술 및 산업 동향 세미나 성료",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "http://www.boannews.com/media/view.asp?idx=142488",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 22,
+      "article_id": "35eeb510221498a79adbb43d",
+      "title": "이노뎁, SECON 2026 참가…오는 20일 기업설명회 개최 - 머니투데이",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "https://www.mt.co.kr/stock/2026/03/18/2026031817192177717",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 23,
+      "article_id": "7e1da950478cc586c51bb9ce",
+      "title": "이노뎁, AI 기반 영상관제 솔루션 ‘VURIX 2026’ 공개... 정확성과 효율성 높였다",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "http://www.boannews.com/media/view.asp?idx=142720",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 24,
+      "article_id": "92152d974356d5b9968dc8f8",
+      "title": "\"올해 확장과 수익화 전환의 해... 'CCTV 1위' 넘어 수익형 AI 플랫폼 도약\" - 머니투데이",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "https://www.mt.co.kr/stock/2026/03/20/2026032013215798725",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 25,
+      "article_id": "eae7b0004de7ccd97bb52e22",
+      "title": "이노뎁, ISC West 2026에서 VUNex 사업 본격화... 북미 PoC·파트너십 확대 추진",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "http://www.boannews.com/media/view.asp?idx=142843",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 26,
+      "article_id": "13c76fd8c9a9f43b715052f7",
+      "title": "2026년 4월 물리&정보 보안 기업들의 분야별 인재 채용 동향 정리",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "http://www.boannews.com/media/view.asp?idx=142889",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 27,
+      "article_id": "a0e123bb44b3b998c8332a18",
+      "title": "[북미 in K-Security] 이노뎁, AI 솔루션 브랜드 ‘VUNex’로 북미 민간 보안시장 진출 본격화",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "http://www.boannews.com/media/view.asp?idx=142893",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 28,
+      "article_id": "74a1f67d630b40e0498bc1a9",
+      "title": "[ISC West 2026 결산] ‘보는 보안’ 너머 ‘판단하는 보안’으로... AI가 바꾼 물리보안의 새 지형도",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "http://www.boannews.com/media/view.asp?idx=142976",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 29,
+      "article_id": "3e6a2095668209789f148cb9",
+      "title": "[2026 지능형 영상분석 솔루션 리포트] 기록에서 데이터로, 영상분석 기술의 진화",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "http://www.boannews.com/media/view.asp?idx=142973",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 30,
+      "article_id": "e13f4d1860cd36a29e4b48b7",
+      "title": "[2026 주차 관제·관리 솔루션 리포트] AI·클라우드로 진화하는 스마트 주차 시장 진단",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "http://www.boannews.com/media/view.asp?idx=142915",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 31,
+      "article_id": "bfbc9da174bfc008bb0f24e9",
+      "title": "[국내 상장 보안기업 매출분석-1] 영상보안 산업, AI·클라우드·글로벌 시장 확장이 3대 성장동력",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "http://www.boannews.com/media/view.asp?idx=143431",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 32,
+      "article_id": "54f797137d345260dd1f671e",
+      "title": "세명소프트, 국산 NPU 기반 AI 모델 허브 플랫폼 구축 나선다 - 머니투데이",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "https://www.mt.co.kr/industry/2026/05/12/2026051116462680931",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 33,
+      "article_id": "4b726b9f92d4101048d7e8dc",
+      "title": "이노뎁, 1분기 매출 85억…\"해외·민수시장 확대 지속\"",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "https://www.newsis.com/view/NISX20260515_0003631462",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 34,
+      "article_id": "583deb4cb890255d134e7d36",
+      "title": "2026년 6월 물리·정보보안 기업 어떤 인재 찾고 있나",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "http://www.boannews.com/media/view.asp?idx=143860",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 35,
+      "article_id": "a7c473b4b620b16c2950e4b6",
+      "title": "이노뎁, 73억 규모 벨리즈 AI 관제사업 수주",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "https://www.newsis.com/view/NISX20260601_0003651807",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 36,
+      "article_id": "0e775056e581c16d49f4d321",
+      "title": "이노뎁, 보육 AI 출시 7개월 만에 전국 상륙…연내 150곳 확산 청신호 - 머니투데이",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "https://www.mt.co.kr/stock/2026/06/04/2026060413433321854",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 37,
+      "article_id": "b0e509f05518d313945f9736",
+      "title": "수원시, AI로 포트홀 잡는다… 용역 착수",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "https://www.newscj.com/news/articleView.html?idxno=3412707",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    },
+    {
+      "source_row": 38,
+      "article_id": "c6b37ae5d1ec1ba67fbd6632",
+      "title": "수원시, AI로 도로 포트홀 신속 탐지 시스템 구축",
+      "legacy_category": "이노뎁 관련 기사",
+      "article_link": "http://www.viva100.com/article/20260628500163",
+      "source_file": "news_innodep.csv",
+      "fetch_status": "success",
+      "preprocess_note": "original"
+    }
+  ]
+}
