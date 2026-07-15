@@ -22,13 +22,10 @@ from .models import Article
 from .normalization import normalize_url
 from .recommendation_rules import (
     DEFAULT_WEIGHTS,
-    SEED_CATEGORY_BONUS,
-    SEMANTIC_RELEVANCE_BLEND,
     SEMANTIC_REDUNDANCY_BLEND,
     SEMANTIC_COSINE_FLOOR,
     QUALITY_SCORE_WINDOW,
     QUALITY_SCORE_CLIFF,
-    MMR_MIN_SELECTION_SCORE,
     DEFAULT_CATEGORY_RANGES,
     DEFAULT_GLOBAL_TITLE_WEIGHTS,
     DEFAULT_CATEGORY_TITLE_WEIGHTS,
@@ -69,7 +66,6 @@ from .recommendation_rules import (
     GOVERNMENT_NORMAL_ACTION_KEYWORDS,
     INDUSTRY_COMPANY_ALIASES,
     SOURCE_SCORES,
-    IMPORTANT_ENTITIES,
 )
 from .semantic_embeddings import (
     ENHANCED_CATEGORIES,
@@ -121,7 +117,24 @@ def text_has_any_keyword(text: str, keywords: list[str]) -> bool:
 
 
 def category_keywords(category: str) -> list[str]:
-    return CATEGORY_KEYWORDS[category] + ADDITIONAL_CATEGORY_KEYWORDS.get(category, [])
+    keywords = CATEGORY_KEYWORDS[category] + ADDITIONAL_CATEGORY_KEYWORDS.get(category, [])
+    # 기본/추가 목록에 같은 키워드가 있어도 한 번만 점수화합니다.
+    return list(dict.fromkeys(keyword.casefold() for keyword in keywords))
+
+
+def strongest_keyword_matches(text: str, keywords: Iterable[str]) -> list[str]:
+    """한 문구에 포함된 짧은 키워드를 중복 근거로 세지 않습니다."""
+    folded = text.casefold()
+    matches = sorted(
+        {keyword.casefold() for keyword in keywords if keyword and keyword.casefold() in folded},
+        key=lambda keyword: (-len(keyword), keyword),
+    )
+    selected: list[str] = []
+    for keyword in matches:
+        if any(keyword in stronger_keyword for stronger_keyword in selected):
+            continue
+        selected.append(keyword)
+    return selected
 
 
 def parse_weight_pairs(raw: str) -> dict[str, float]:
@@ -365,33 +378,25 @@ def rule_score(article: Article, category: str) -> float:
     score = 0.0
     max_score = 35.0
 
-    for keyword in category_keywords(category):
-        needle = keyword.casefold()
-        if needle in title:
-            score += 3.0
-        if needle in description:
-            score += 2.0
-        if needle and needle in query:
-            score += 1.0
+    keywords = category_keywords(category)
+    score += 3.0 * len(strongest_keyword_matches(title, keywords))
+    score += 2.0 * len(strongest_keyword_matches(description, keywords))
+    score += 1.0 * len(strongest_keyword_matches(query, keywords))
 
     # Category-specific title weights are the strongest rule signal.
     # This keeps generic titles such as "AI 활용" from outranking direct titles
     # such as "AI CCTV", "영상관제", "통합관제센터", or "온디바이스 AI 실증".
-    for keyword, weight in category_title_weights(category).items():
-        if keyword.casefold() in title:
-            score += weight
+    title_weights = {
+        keyword.casefold(): weight for keyword, weight in category_title_weights(category).items()
+    }
+    for keyword in strongest_keyword_matches(title, title_weights):
+        score += title_weights[keyword]
 
     # Negative title weights suppress noisy articles that often match broad terms
     # but are not suitable for a company-wide technology/news digest.
     for keyword, weight in negative_title_weights().items():
         if keyword.casefold() in title:
             score += weight
-
-    if category == CATEGORY_INNODEP:
-        for entity in IMPORTANT_ENTITIES:
-            needle = entity.casefold()
-            if needle in title:
-                score += 8.0
 
     for keyword in BLACKLIST_KEYWORDS:
         needle = keyword.casefold()
@@ -425,22 +430,30 @@ def relevance_score(
     source = source_score(article)
     entity = entity_score(article, category)
     language = language_score(article)
-    total = (
-        weights["rule"] * rule
-        + weights["recency"] * recency
-        + weights["source"] * source
-        + weights["entity"] * entity
-        + weights["language"] * language
-    )
     semantic = semantic_category_score(article, category)
+    seed = 1.0 if article.seed_category == category else 0.0
+    feature_values = {
+        "rule": rule,
+        "recency": recency,
+        "source": source,
+        "language": language,
+        "seed": seed,
+    }
+    if category == CATEGORY_INNODEP:
+        feature_values["entity"] = entity
     if semantic is not None:
-        total = (1.0 - SEMANTIC_RELEVANCE_BLEND) * total + SEMANTIC_RELEVANCE_BLEND * semantic
-    if entity > 0:
-        total += 0.30
-    if category == CATEGORY_GOVERNMENT and is_government_priority_article(article):
-        total += 0.20
-    seed = SEED_CATEGORY_BONUS if article.seed_category == category else 0.0
-    total += seed
+        feature_values["semantic"] = semantic
+
+    # 카테고리에서 실제로 사용할 수 있는 신호만 정규화합니다. 엔티티와 시드는
+    # 더 이상 정규화 밖에서 고정 보너스로 더하지 않습니다. 정부 우선 조건은
+    # 후보 자격 판정에만 사용해 같은 정책 키워드가 점수에도 중복 반영되지 않게 합니다.
+    active_weights = {
+        name: max(0.0, weights.get(name, 0.0))
+        for name in feature_values
+        if weights.get(name, 0.0) > 0.0
+    }
+    total_weight = sum(active_weights.values()) or 1.0
+    total = sum(active_weights[name] * feature_values[name] for name in active_weights) / total_weight
     components = {
         "rule": rule,
         "recency": recency,
@@ -450,7 +463,8 @@ def relevance_score(
         "semantic": semantic or 0.0,
         "seed": seed,
     }
-    return round(min(1.0, total), 4), components
+    # 내부 순위 점수는 상한으로 자르지 않아 후보 사이의 차이를 보존합니다.
+    return round(total, 4), components
 
 
 def threshold_from_min_score(min_score: float) -> float:
@@ -520,6 +534,30 @@ def target_count_for_category(
         if previous_score - current_score >= QUALITY_SCORE_CLIFF:
             return index
     return limit
+
+
+def log_score_distribution(category: str, scores: list[float]) -> None:
+    """카테고리별 내부 점수 분포와 상단 포화 비율을 기록합니다."""
+    if not scores:
+        LOGGER.info("Recommendation scores category=%s candidates=0", category)
+        return
+    ordered = sorted(scores)
+    count = len(ordered)
+    median = ordered[count // 2]
+    p90 = ordered[min(count - 1, int((count - 1) * 0.9))]
+    saturated = sum(score >= 1.0 for score in ordered)
+    LOGGER.info(
+        "Recommendation scores category=%s candidates=%s min=%.4f median=%.4f "
+        "p90=%.4f max=%.4f saturated=%s(%.1f%%)",
+        category,
+        count,
+        ordered[0],
+        median,
+        p90,
+        ordered[-1],
+        saturated,
+        saturated * 100.0 / count,
+    )
 
 
 def is_eligible_category_candidate(
@@ -658,8 +696,6 @@ def mmr_select(
             if mmr > best_score:
                 best_index = index
                 best_score = mmr
-        if best_score < MMR_MIN_SELECTION_SCORE:
-            break
         article, relevance, components = remaining.pop(best_index)
         selected_article = replace(
             article,
@@ -669,6 +705,13 @@ def mmr_select(
         )
         already_selected.add(selected_article.canonical_url)
         selected.append(selected_article)
+        # 품질 개수는 target_count_for_category가 결정하고, MMR 단계에서는
+        # 선택한 기사와 실질적으로 같은 후보만 제거한 뒤 다양성 순서로 재정렬합니다.
+        remaining = [
+            candidate
+            for candidate in remaining
+            if not is_similar_to_selected(candidate[0], [selected_article])
+        ]
         if category == CATEGORY_INDUSTRY:
             company = industry_company_key(selected_article)
             if company:
@@ -704,10 +747,9 @@ def select_cch_mmr_articles(
     if not active_categories:
         return []
 
-    # 외부에서 일부 가중치만 넘겨도 전체 합이 1이 되도록 정규화합니다.
+    # 외부에서 일부 가중치만 넘기면 기본값과 병합하고, 카테고리별 실제
+    # 정규화는 relevance_score에서 사용 가능한 feature만 대상으로 수행합니다.
     active_weights = {**DEFAULT_WEIGHTS, **(weights or {})}
-    total_weight = sum(active_weights.values()) or 1.0
-    active_weights = {key: value / total_weight for key, value in active_weights.items()}
     category_ranges = category_ranges_from_quotas(category_quotas)
     threshold = threshold_from_min_score(min_score)
     # 명백한 제외 대상과 중복 기사를 먼저 걷어낸 뒤 카테고리별 점수를 계산합니다.
@@ -725,7 +767,7 @@ def select_cch_mmr_articles(
         prepare_semantic_articles(unique_articles)
 
     scored_by_category: dict[str, list[tuple[Article, float, dict[str, float]]]] = {category: [] for category in active_categories}
-    all_scored: list[tuple[str, Article, float, dict[str, float]]] = []
+    raw_scores_by_category: dict[str, list[float]] = {category: [] for category in active_categories}
     for article in unique_articles:
         article_scores: list[tuple[str, Article, float, dict[str, float]]] = []
         for category in active_categories:
@@ -737,7 +779,8 @@ def select_cch_mmr_articles(
                 timezone=timezone,
             )
             article_scores.append((category, article, score, components))
-        all_scored.extend(article_scores)
+        for category, _, score, _ in article_scores:
+            raw_scores_by_category[category].append(score)
 
         if target_categories is not None:
             for category, _, score, components in article_scores:
@@ -794,6 +837,7 @@ def select_cch_mmr_articles(
 
     for category in active_categories:
         scored_by_category[category].sort(key=lambda item: (-item[1], item[0].pub_date))
+        log_score_distribution(category, raw_scores_by_category[category])
 
     selected: list[Article] = []
     selected_urls: set[str] = set()

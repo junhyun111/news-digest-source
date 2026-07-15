@@ -11,7 +11,12 @@ import numpy as np
 from news_digest import cch_mmr_recommender as recommender
 from news_digest import pipeline
 from news_digest import semantic_embeddings
-from news_digest.categories import CATEGORY_INDUSTRY, CATEGORY_SECURITY
+from news_digest.categories import (
+    CATEGORY_GOVERNMENT,
+    CATEGORY_INDUSTRY,
+    CATEGORY_INNODEP,
+    CATEGORY_SECURITY,
+)
 from news_digest.models import Article
 
 
@@ -40,13 +45,24 @@ class SemanticScoringTests(unittest.TestCase):
             3,
         )
 
-    def test_mmr_stops_when_next_candidate_has_low_marginal_value(self) -> None:
+    def test_score_distribution_reports_saturation_ratio(self) -> None:
+        with self.assertLogs(recommender.LOGGER, level="INFO") as captured:
+            recommender.log_score_distribution("테스트", [0.2, 0.8, 1.0, 1.1])
+
+        self.assertIn("saturated=2(50.0%)", captured.output[0])
+
+    def test_mmr_uses_redundancy_to_rerank_without_setting_quality_count(self) -> None:
         candidates = [
             (article("첫 기사"), 0.8, {}),
-            (article("중복 기사"), 0.7, {}),
+            (article("중복 기사"), 0.79, {}),
+            (article("다양한 기사"), 0.7, {}),
         ]
+
+        def redundancy(candidate: Article, _existing: Article) -> float:
+            return 1.0 if candidate.title == "중복 기사" else 0.0
+
         with (
-            patch.object(recommender, "redundancy_score", return_value=1.0),
+            patch.object(recommender, "redundancy_score", side_effect=redundancy),
             patch.object(recommender, "reason_for", return_value="test"),
             patch.object(recommender, "industry_company_key", return_value=""),
         ):
@@ -60,7 +76,69 @@ class SemanticScoringTests(unittest.TestCase):
                 selected_industry_companies=set(),
             )
 
-        self.assertEqual(len(selected), 1)
+        self.assertEqual([item.title for item in selected], ["첫 기사", "다양한 기사"])
+
+    def test_overlapping_keywords_count_only_the_strongest_phrase(self) -> None:
+        matches = recommender.strongest_keyword_matches(
+            "AI 통합관제센터 구축",
+            ["관제", "통합관제", "통합관제센터", "구축"],
+        )
+
+        self.assertEqual(set(matches), {"통합관제센터", "구축"})
+        self.assertEqual(recommender.category_keywords(CATEGORY_INNODEP).count("이노뎁"), 1)
+
+    def test_innodep_entity_is_a_normalized_feature_not_an_additive_bonus(self) -> None:
+        candidate = replace(article("이노뎁 신제품 발표"), seed_category=CATEGORY_INNODEP)
+        weights = {
+            "rule": 0.38,
+            "recency": 0.0,
+            "source": 0.0,
+            "entity": 0.15,
+            "language": 0.0,
+            "semantic": 0.0,
+            "seed": 0.05,
+        }
+        with (
+            patch.object(recommender, "rule_score", return_value=0.8),
+            patch.object(recommender, "entity_score", return_value=1.0),
+            patch.object(recommender, "semantic_category_score", return_value=None),
+        ):
+            score, _ = recommender.relevance_score(
+                candidate,
+                CATEGORY_INNODEP,
+                weights=weights,
+                now=candidate.pub_date,
+                timezone="UTC",
+            )
+
+        self.assertAlmostEqual(score, 0.869, places=4)
+        self.assertLess(score, 1.0)
+
+    def test_government_priority_is_an_eligibility_gate_not_a_score_bonus(self) -> None:
+        candidate = replace(article("정부 AI 사업 추진"), seed_category=CATEGORY_GOVERNMENT)
+        weights = {
+            "rule": 0.8,
+            "recency": 0.0,
+            "source": 0.0,
+            "entity": 0.0,
+            "language": 0.0,
+            "semantic": 0.0,
+            "seed": 0.2,
+        }
+        with (
+            patch.object(recommender, "rule_score", return_value=0.5),
+            patch.object(recommender, "semantic_category_score", return_value=None),
+            patch.object(recommender, "is_government_priority_article", return_value=True),
+        ):
+            score, _ = recommender.relevance_score(
+                candidate,
+                CATEGORY_GOVERNMENT,
+                weights=weights,
+                now=candidate.pub_date,
+                timezone="UTC",
+            )
+
+        self.assertAlmostEqual(score, 0.6)
 
     def test_industry_accepts_company_product_and_core_technology(self) -> None:
         candidates = [
@@ -135,11 +213,13 @@ class SemanticScoringTests(unittest.TestCase):
     def test_semantic_score_blends_with_existing_relevance(self) -> None:
         candidate = article("AI 반도체 투자")
         weights = {
-            "rule": 1.0,
+            "rule": 0.65,
             "recency": 0.0,
             "source": 0.0,
             "entity": 0.0,
             "language": 0.0,
+            "semantic": 0.35,
+            "seed": 0.0,
         }
         with (
             patch.object(recommender, "rule_score", return_value=0.4),

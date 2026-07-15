@@ -218,7 +218,7 @@ Windows에서 다음 순서로 배포 파일을 만듭니다.
 | `LABOR_QUERIES` | 아니요 | 생산/임금 카테고리 검색어 목록 |
 | `KEYWORD_WEIGHTS` | 아니요 | `AI:2,보안:3,CCTV:4` 형식 |
 | `CATEGORY_QUOTAS` | 아니요 | `업계 동향 기사:10,보안 관련 기사:4` 형식 |
-| `RECOMMENDATION_WEIGHTS` | 아니요 | `rule:0.38,recency:0.08,source:0.02,entity:0.15,language:0.08` 형식 |
+| `RECOMMENDATION_WEIGHTS` | 아니요 | `rule:0.38,recency:0.08,source:0.02,entity:0.15,language:0.08,semantic:0.35,seed:0.05` 형식. 카테고리에서 사용 가능한 신호만 다시 정규화 |
 | `SEMANTIC_RECOMMENDATION_ENABLED` | 아니요 | 업계 동향·보안·벤처/금융 의미 추천 사용 여부, 기본값 `true` |
 | `SEMANTIC_EMBEDDING_DIR` | 아니요 | 기준 `.npy` 파일 폴더, 기본값 `model/embeddings` |
 
@@ -441,8 +441,8 @@ PC 전원이 꺼져 있으면 작업 스케줄러가 실행할 수 없습니다.
 환경 변수 로드
   → 카테고리별 네이버 뉴스 검색
   → 날짜 범위 및 제외 규칙 적용
-  → 규칙 및 기준 임베딩 관련도 점수 계산
-  → 카테고리 quota와 의미 유사도 보강 MMR로 기사 선택
+  → 중복 키워드를 억제한 규칙 및 기준 임베딩 관련도 점수 계산
+  → 절대 기준·점수 절벽으로 품질 개수를 정한 뒤 MMR로 중복 제거 및 다양성 재정렬
   → URL·제목·카테고리 간 의미 중복 제거
   → 텍스트/HTML 이메일 생성 및 SMTP 발송
 ```
