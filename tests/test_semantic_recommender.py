@@ -87,6 +87,40 @@ class SemanticScoringTests(unittest.TestCase):
         self.assertEqual(set(matches), {"통합관제센터", "구축"})
         self.assertEqual(recommender.category_keywords(CATEGORY_INNODEP).count("이노뎁"), 1)
 
+    def test_security_actor_normalizes_local_government_office_suffix(self) -> None:
+        city = article("보령시, 방범 CCTV 154대 확충")
+        city_hall = article("보령시청, AI CCTV 관제 시스템 도입")
+
+        self.assertEqual(recommender.security_actor_key(city), "보령시")
+        self.assertEqual(recommender.security_actor_key(city_hall), "보령시")
+
+    def test_security_selects_only_one_article_per_actor(self) -> None:
+        candidates = [
+            (article("보령시, 방범 CCTV 154대 확충"), 0.9, {}),
+            (article("보령시청, AI CCTV 관제 시스템 도입"), 0.85, {}),
+            (article("영덕군, 통합관제센터 CCTV 확대"), 0.8, {}),
+        ]
+        with (
+            patch.object(recommender, "reason_for", return_value="test"),
+            patch.object(recommender, "is_similar_to_selected", return_value=False),
+            patch.object(recommender, "redundancy_score", return_value=0.0),
+        ):
+            selected = recommender.mmr_select(
+                candidates,
+                quota=3,
+                category=CATEGORY_SECURITY,
+                lambda_value=0.7,
+                already_selected=set(),
+                selected_articles=[],
+                selected_industry_companies=set(),
+                selected_security_actors=set(),
+            )
+
+        self.assertEqual(
+            [item.title for item in selected],
+            ["보령시, 방범 CCTV 154대 확충", "영덕군, 통합관제센터 CCTV 확대"],
+        )
+
     def test_innodep_entity_is_a_normalized_feature_not_an_additive_bonus(self) -> None:
         candidate = replace(article("이노뎁 신제품 발표"), seed_category=CATEGORY_INNODEP)
         weights = {

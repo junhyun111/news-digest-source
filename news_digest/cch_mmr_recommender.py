@@ -325,6 +325,47 @@ def industry_company_key(article: Article) -> str:
     return ""
 
 
+def security_actor_key(article: Article) -> str:
+    """보안 기사 제목 앞부분에서 지자체·공공기관·기업 주체를 정규화합니다."""
+    first_clause = re.split(r"[,，·…:|]", article.title.casefold(), maxsplit=1)[0]
+    alias_groups = {
+        "서울시": ("서울특별시", "서울시청", "서울시"),
+        "경기도": ("경기도청", "경기도"),
+        "인천시": ("인천광역시", "인천시청", "인천시"),
+        "부산시": ("부산광역시", "부산시청", "부산시"),
+        "대구시": ("대구광역시", "대구시청", "대구시"),
+        "광주시": ("광주광역시", "광주시청", "광주시"),
+        "대전시": ("대전광역시", "대전시청", "대전시"),
+        "울산시": ("울산광역시", "울산시청", "울산시"),
+        "세종시": ("세종특별자치시", "세종시청", "세종시"),
+        "행정안전부": ("행정안전부", "행안부"),
+        "과학기술정보통신부": ("과학기술정보통신부", "과기정통부"),
+        "국토교통부": ("국토교통부", "국토부"),
+        "개인정보보호위원회": ("개인정보보호위원회", "개보위"),
+        "한국인터넷진흥원": ("한국인터넷진흥원", "kisa"),
+    }
+    for canonical, aliases in alias_groups.items():
+        if any(alias.casefold() in first_clause for alias in aliases):
+            return canonical
+
+    company = industry_company_key(article)
+    if company and any(alias.casefold() in first_clause for alias in INDUSTRY_COMPANY_ALIASES[company]):
+        return company
+
+    actor_pattern = re.compile(
+        r"[가-힣]{2,18}(?:특별자치도|특별자치시|광역시|특별시|경찰청|경찰서|"
+        r"소방청|소방서|해양경찰서|도시공사|시설공단|공사|공단|도|시|군|구)(?:청)?"
+    )
+    for raw_token in first_clause.split()[:3]:
+        token = raw_token.strip("[]()'\"“”‘’ ")
+        token = re.sub(r"(?:은|는|이|가)$", "", token)
+        if actor_pattern.fullmatch(token):
+            if token.endswith("청") and token[:-1].endswith(("도", "시", "군", "구")):
+                token = token[:-1]
+            return token
+    return ""
+
+
 def hangul_ratio(text: str) -> float:
     letters = re.findall(r"[A-Za-z가-힣]", text)
     if not letters:
@@ -668,9 +709,11 @@ def mmr_select(
     already_selected: set[str],
     selected_articles: list[Article],
     selected_industry_companies: set[str],
+    selected_security_actors: set[str] | None = None,
 ) -> list[Article]:
     """관련도는 높이고, 이미 고른 기사와 너무 비슷한 기사는 피해서 선택합니다."""
     selected: list[Article] = []
+    active_security_actors = selected_security_actors if selected_security_actors is not None else set()
     remaining = [
         candidate
         for candidate in candidates
@@ -680,6 +723,11 @@ def mmr_select(
             category != CATEGORY_INDUSTRY
             or not industry_company_key(candidate[0])
             or industry_company_key(candidate[0]) not in selected_industry_companies
+        )
+        and (
+            category != CATEGORY_SECURITY
+            or not security_actor_key(candidate[0])
+            or security_actor_key(candidate[0]) not in active_security_actors
         )
     ]
     while remaining and len(selected) < quota:
@@ -720,6 +768,15 @@ def mmr_select(
                     candidate
                     for candidate in remaining
                     if industry_company_key(candidate[0]) != company
+                ]
+        if category == CATEGORY_SECURITY:
+            actor = security_actor_key(selected_article)
+            if actor:
+                active_security_actors.add(actor)
+                remaining = [
+                    candidate
+                    for candidate in remaining
+                    if security_actor_key(candidate[0]) != actor
                 ]
     return selected
 
@@ -842,6 +899,7 @@ def select_cch_mmr_articles(
     selected: list[Article] = []
     selected_urls: set[str] = set()
     selected_industry_companies: set[str] = set()
+    selected_security_actors: set[str] = set()
     selected_counts: dict[str, int] = {category: 0 for category in active_categories}
     for category in active_categories:
         remaining_slots = max_articles - len(selected)
@@ -864,6 +922,7 @@ def select_cch_mmr_articles(
             already_selected=selected_urls,
             selected_articles=selected,
             selected_industry_companies=selected_industry_companies,
+            selected_security_actors=selected_security_actors,
         )
         selected_counts[category] += len(category_selected)
         selected.extend(category_selected)
