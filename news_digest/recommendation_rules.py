@@ -36,17 +36,15 @@ CATEGORY_QUALITY_SCORE_WINDOWS = {
     CATEGORY_LABOR: 0.04,
 }
 
-# 상대 품질 구간만으로 기사 수가 지나치게 줄어드는 카테고리는, 필수 조건을
-# 통과하고 절대 점수 하한도 만족하는 후보로 권장 최소 개수까지 보충합니다.
-CATEGORY_RECOMMENDED_MIN_COUNTS = {
-    CATEGORY_SECURITY: 3,
-    CATEGORY_INDUSTRY: 3,
-    CATEGORY_VENTURE: 3,
-}
-CATEGORY_BACKFILL_SCORE_FLOORS = {
-    CATEGORY_SECURITY: 0.65,
-    CATEGORY_INDUSTRY: 0.65,
-    CATEGORY_VENTURE: 0.65,
+# 상대 품질 구간만으로 기사 수가 지나치게 줄면, 필수 조건과 절대 하한을
+# 만족하는 후보로 카테고리별 권장 최소 개수까지 보충합니다.
+CATEGORY_SELECTION_POLICIES = {
+    CATEGORY_INNODEP: (2, 0.65),
+    CATEGORY_SECURITY: (3, 0.65),
+    CATEGORY_INDUSTRY: (3, 0.50),
+    CATEGORY_GOVERNMENT: (3, 0.65),
+    CATEGORY_VENTURE: (3, 0.65),
+    CATEGORY_LABOR: (2, 0.65),
 }
 
 DEFAULT_CATEGORY_RANGES = {

@@ -28,8 +28,7 @@ from .recommendation_rules import (
     QUALITY_SCORE_CLIFF,
     CATEGORY_MIN_SCORE_FLOORS,
     CATEGORY_QUALITY_SCORE_WINDOWS,
-    CATEGORY_RECOMMENDED_MIN_COUNTS,
-    CATEGORY_BACKFILL_SCORE_FLOORS,
+    CATEGORY_SELECTION_POLICIES,
     DEFAULT_CATEGORY_RANGES,
     DEFAULT_GLOBAL_TITLE_WEIGHTS,
     DEFAULT_CATEGORY_TITLE_WEIGHTS,
@@ -936,19 +935,21 @@ def select_cch_mmr_articles(
     selected_urls: set[str] = set()
     selected_industry_companies: set[str] = set()
     selected_security_actors: set[str] = set()
-    selected_counts: dict[str, int] = {category: 0 for category in active_categories}
     for category in active_categories:
         remaining_slots = max_articles - len(selected)
         if remaining_slots <= 0:
             break
         _, maximum = category_ranges.get(category, (0, 0))
+        recommended_minimum, backfill_score_floor = CATEGORY_SELECTION_POLICIES.get(
+            category, (0, None)
+        )
         target_count = target_count_for_category(
             scored_by_category[category],
             maximum=maximum,
             threshold=category_thresholds[category],
             quality_window=CATEGORY_QUALITY_SCORE_WINDOWS.get(category, QUALITY_SCORE_WINDOW),
-            recommended_minimum=CATEGORY_RECOMMENDED_MIN_COUNTS.get(category, 0),
-            backfill_score_floor=CATEGORY_BACKFILL_SCORE_FLOORS.get(category),
+            recommended_minimum=recommended_minimum,
+            backfill_score_floor=backfill_score_floor,
         )
         target_count = min(target_count, remaining_slots)
         if target_count <= 0:
@@ -963,7 +964,6 @@ def select_cch_mmr_articles(
             selected_industry_companies=selected_industry_companies,
             selected_security_actors=selected_security_actors,
         )
-        selected_counts[category] += len(category_selected)
         selected.extend(category_selected)
 
     return selected[:max_articles]

@@ -15,6 +15,7 @@ from news_digest.categories import (
     CATEGORY_GOVERNMENT,
     CATEGORY_INDUSTRY,
     CATEGORY_INNODEP,
+    CATEGORY_LABOR,
     CATEGORY_SECURITY,
     CATEGORY_VENTURE,
 )
@@ -103,17 +104,17 @@ class SemanticScoringTests(unittest.TestCase):
             1,
         )
 
-    def test_enhanced_categories_share_recommended_minimum_and_absolute_floor(self) -> None:
-        for category in (CATEGORY_SECURITY, CATEGORY_INDUSTRY, CATEGORY_VENTURE):
-            with self.subTest(category=category):
-                self.assertEqual(
-                    recommender.CATEGORY_RECOMMENDED_MIN_COUNTS[category],
-                    3,
-                )
-                self.assertEqual(
-                    recommender.CATEGORY_BACKFILL_SCORE_FLOORS[category],
-                    0.65,
-                )
+    def test_every_category_has_a_selection_policy(self) -> None:
+        expected = {
+            CATEGORY_INNODEP: (2, 0.65),
+            CATEGORY_SECURITY: (3, 0.65),
+            CATEGORY_INDUSTRY: (3, 0.50),
+            CATEGORY_GOVERNMENT: (3, 0.65),
+            CATEGORY_VENTURE: (3, 0.65),
+            CATEGORY_LABOR: (2, 0.65),
+        }
+
+        self.assertEqual(recommender.CATEGORY_SELECTION_POLICIES, expected)
 
     def test_government_and_labor_have_stricter_score_floor(self) -> None:
         self.assertEqual(
