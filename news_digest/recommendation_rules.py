@@ -1090,5 +1090,3 @@ SOURCE_SCORES = {
     "조선비즈": 0.72,
     "브릿지경제": 0.68,
 }
-
-IMPORTANT_ENTITIES = INNODEP_ENTITIES

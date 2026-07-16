@@ -23,7 +23,7 @@ _last_request_at = 0.0
 
 
 def wait_for_request_slot() -> None:
-    """Keep requests from this Lambda runtime below a conservative rate."""
+    """Keep consecutive Naver API requests below a conservative rate."""
     global _last_request_at
 
     elapsed = time.monotonic() - _last_request_at

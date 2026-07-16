@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import replace
 from datetime import datetime, timedelta
 
-from .categories import classify_article
 from .cch_mmr_recommender import select_cch_mmr_articles
 from .keyword_fallback import score_article
 from .models import Article
@@ -11,7 +10,10 @@ from .normalization import normalize_title, normalize_url
 from .timezones import get_timezone
 
 
-def recommendation_range(now: datetime | None = None, timezone: str = "Asia/Seoul") -> tuple[datetime, datetime]:
+def recommendation_range(
+    now: datetime | None = None,
+    timezone: str = "Asia/Seoul",
+) -> tuple[datetime, datetime]:
     tz = get_timezone(timezone)
     localized_now = (now or datetime.now(tz)).astimezone(tz)
     start_days_back = 3 if localized_now.weekday() == 0 else 1
@@ -21,7 +23,11 @@ def recommendation_range(now: datetime | None = None, timezone: str = "Asia/Seou
     return start, end
 
 
-def is_in_recommendation_range(article: Article, now: datetime | None = None, timezone: str = "Asia/Seoul") -> bool:
+def is_in_recommendation_range(
+    article: Article,
+    now: datetime | None = None,
+    timezone: str = "Asia/Seoul",
+) -> bool:
     start, end = recommendation_range(now=now, timezone=timezone)
     pub_date = article.pub_date.astimezone(get_timezone(timezone))
     return start < pub_date <= end
@@ -47,18 +53,20 @@ def select_keyword_fallback_articles(
     keyword_weights: dict[str, float],
     min_score: float,
     max_articles: int,
-    category: str | None = None,
+    category: str,
 ) -> list[Article]:
     """CCH-MMR 결과가 없을 때 사용하는 단순 키워드 기반 보충 선택입니다."""
     fallback_articles = [
         replace(
             article,
             score=score_article(article, keyword_weights),
-            category=category or classify_article(article),
+            category=category,
         )
         for article in articles
     ]
-    relevant_fallback_articles = [article for article in fallback_articles if article.score >= min_score]
+    relevant_fallback_articles = [
+        article for article in fallback_articles if article.score >= min_score
+    ]
 
     unique_articles = deduplicate_articles(relevant_fallback_articles)
     return sorted(unique_articles, key=lambda article: (-article.score, article.pub_date))[:max_articles]
@@ -77,7 +85,9 @@ def select_category_articles(
     mmr_lambda: float = 0.70,
 ) -> list[Article]:
     recommendation_articles = [
-        article for article in articles if is_in_recommendation_range(article, now=now, timezone=timezone)
+        article
+        for article in articles
+        if is_in_recommendation_range(article, now=now, timezone=timezone)
     ]
     selected = select_cch_mmr_articles(
         recommendation_articles,
@@ -98,5 +108,5 @@ def select_category_articles(
         keyword_weights,
         min_score,
         max_articles,
-        category=category,
+        category,
     )

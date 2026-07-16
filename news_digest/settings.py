@@ -10,16 +10,6 @@ from .categories import (
 )
 
 
-NEWS_QUERIES = [
-    "AI",
-    "인공지능",
-    "생성형 AI",
-    "반도체",
-    "보안",
-    "클라우드",
-    "데이터센터",
-]
-
 CATEGORY_QUERIES = {
     CATEGORY_INNODEP: [
         "이노뎁",
@@ -190,8 +180,6 @@ CATEGORY_QUOTAS = {}
 
 
 def validate_settings() -> None:
-    if not NEWS_QUERIES:
-        raise ValueError("NEWS_QUERIES must not be empty.")
     for category, queries in CATEGORY_QUERIES.items():
         if not queries:
             raise ValueError(f"CATEGORY_QUERIES[{category!r}] must not be empty.")

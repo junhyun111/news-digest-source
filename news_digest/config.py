@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from dataclasses import field
+from dataclasses import dataclass, field
 from pathlib import Path
 import os
 
@@ -16,7 +15,6 @@ from .categories import (
 )
 
 
-DEFAULT_QUERIES = settings.NEWS_QUERIES
 DEFAULT_CATEGORY_QUERIES = settings.CATEGORY_QUERIES
 
 CATEGORY_QUERY_ENV_NAMES = {
@@ -78,10 +76,6 @@ def parse_keyword_weights(value: str | None) -> dict[str, float]:
     return weights
 
 
-def parse_float_map(value: str | None) -> dict[str, float]:
-    return parse_keyword_weights(value)
-
-
 def parse_int_map(value: str | None) -> dict[str, int]:
     values: dict[str, int] = {}
     for item in parse_csv(value):
@@ -107,7 +101,6 @@ def parse_category_queries() -> dict[str, list[str]]:
 class Config:
     naver_client_id: str
     naver_client_secret: str
-    queries: list[str]
     keyword_weights: dict[str, float]
     min_score: float
     max_articles: int
@@ -135,9 +128,6 @@ class Config:
         settings.validate_settings()
         load_dotenv()
         category_queries = parse_category_queries()
-        queries = parse_csv(os.getenv("NEWS_QUERIES"))
-        if not queries:
-            queries = DEFAULT_QUERIES
         keyword_weights = parse_keyword_weights(os.getenv("KEYWORD_WEIGHTS"))
         if not keyword_weights:
             keyword_weights = DEFAULT_KEYWORD_WEIGHTS
@@ -150,7 +140,6 @@ class Config:
         return cls(
             naver_client_id=os.getenv("NAVER_CLIENT_ID", ""),
             naver_client_secret=os.getenv("NAVER_CLIENT_SECRET", ""),
-            queries=queries,
             keyword_weights=keyword_weights,
             min_score=float(os.getenv("MIN_SCORE", str(DEFAULT_MIN_SCORE))),
             max_articles=int(os.getenv("MAX_ARTICLES", str(DEFAULT_MAX_ARTICLES))),
@@ -168,7 +157,7 @@ class Config:
             real_recipients=parse_csv(os.getenv("REAL_RECIPIENTS")),
             test_recipients=parse_csv(os.getenv("TEST_RECIPIENTS")),
             category_queries=category_queries,
-            recommendation_weights=parse_float_map(os.getenv("RECOMMENDATION_WEIGHTS"))
+            recommendation_weights=parse_keyword_weights(os.getenv("RECOMMENDATION_WEIGHTS"))
             or settings.RECOMMENDATION_WEIGHTS,
             category_quotas=parse_int_map(os.getenv("CATEGORY_QUOTAS")) or settings.CATEGORY_QUOTAS,
             mmr_lambda=float(os.getenv("MMR_LAMBDA", str(DEFAULT_MMR_LAMBDA))),
