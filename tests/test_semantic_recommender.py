@@ -291,7 +291,7 @@ class SemanticScoringTests(unittest.TestCase):
                     )
                 )
 
-    def test_industry_rejects_generic_ai_social_and_issue_articles(self) -> None:
+    def test_industry_accepts_generic_ai_without_business_action(self) -> None:
         candidates = [
             article("챗GPT·제미나이에 성·마약 질문하다 걸린 메타"),
             article("장애 청소년 AI 활용·취업 돕는 LG전자"),
@@ -300,11 +300,20 @@ class SemanticScoringTests(unittest.TestCase):
 
         for candidate in candidates:
             with self.subTest(title=candidate.title):
-                self.assertFalse(
+                self.assertTrue(
                     recommender.is_eligible_category_candidate(
                         candidate, CATEGORY_INDUSTRY, 0.8, {"rule": 0.5}, 0.5
                     )
                 )
+
+    def test_industry_still_rejects_noise_without_strong_topic(self) -> None:
+        candidate = article("AI 테마주 주가 급등")
+
+        self.assertFalse(
+            recommender.is_eligible_category_candidate(
+                candidate, CATEGORY_INDUSTRY, 0.8, {"rule": 0.5}, 0.5
+            )
+        )
 
     def test_security_accepts_video_surveillance_article(self) -> None:
         candidate = article("보령시, 방범 CCTV 확충하고 통합관제센터 연계")

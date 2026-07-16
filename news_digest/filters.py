@@ -16,7 +16,7 @@ def recommendation_range(now: datetime | None = None, timezone: str = "Asia/Seou
     localized_now = (now or datetime.now(tz)).astimezone(tz)
     start_days_back = 3 if localized_now.weekday() == 0 else 1
     start_date = localized_now.date() - timedelta(days=start_days_back)
-    start = datetime.combine(start_date, datetime.min.time(), tz)
+    start = datetime.combine(start_date, datetime.min.time(), tz) + timedelta(hours=7)
     end = datetime.combine(localized_now.date(), datetime.min.time(), tz) + timedelta(hours=7)
     return start, end
 
@@ -24,7 +24,7 @@ def recommendation_range(now: datetime | None = None, timezone: str = "Asia/Seou
 def is_in_recommendation_range(article: Article, now: datetime | None = None, timezone: str = "Asia/Seoul") -> bool:
     start, end = recommendation_range(now=now, timezone=timezone)
     pub_date = article.pub_date.astimezone(get_timezone(timezone))
-    return start <= pub_date < end
+    return start < pub_date <= end
 
 
 def deduplicate_articles(articles: list[Article]) -> list[Article]:

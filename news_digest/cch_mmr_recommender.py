@@ -57,7 +57,6 @@ from .recommendation_rules import (
     VENTURE_NOISE_KEYWORDS,
     INDUSTRY_STRONG_TOPIC_KEYWORDS,
     INDUSTRY_GENERIC_TECH_KEYWORDS,
-    INDUSTRY_BUSINESS_ACTION_KEYWORDS,
     INDUSTRY_NOISE_KEYWORDS,
     GOVERNMENT_NOISE_ALLOWED_TOPICS,
     GOVERNMENT_PUBLIC_ACTOR_KEYWORDS,
@@ -308,9 +307,8 @@ def has_industry_strong_topic(article: Article) -> bool:
 
 def has_industry_core_content(article: Article) -> bool:
     text = article_text(article)
-    return has_industry_strong_topic(article) or (
-        text_has_any_keyword(text, INDUSTRY_GENERIC_TECH_KEYWORDS)
-        and text_has_any_keyword(text, INDUSTRY_BUSINESS_ACTION_KEYWORDS)
+    return has_industry_strong_topic(article) or text_has_any_keyword(
+        text, INDUSTRY_GENERIC_TECH_KEYWORDS
     )
 
 
