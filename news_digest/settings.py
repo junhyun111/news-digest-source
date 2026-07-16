@@ -142,7 +142,6 @@ CATEGORY_TITLE_WEIGHTS = {
         "피지컬 AI": 10,
         "에이전틱 AI": 10,
         "AI 에이전트": 10,
-        "NPU": 8,
         "GPU": 7,
         "AI 반도체": 10,
         "AI 가속기": 10,

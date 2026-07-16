@@ -16,6 +16,7 @@ from news_digest.categories import (
     CATEGORY_INDUSTRY,
     CATEGORY_INNODEP,
     CATEGORY_SECURITY,
+    CATEGORY_VENTURE,
 )
 from news_digest.models import Article
 
@@ -64,6 +65,55 @@ class SemanticScoringTests(unittest.TestCase):
             ),
             1,
         )
+
+    def test_security_backfills_recommended_minimum_above_absolute_floor(self) -> None:
+        candidates = [
+            (article("후보 1"), 0.917, {}),
+            (article("후보 2"), 0.7694, {}),
+            (article("후보 3"), 0.7533, {}),
+            (article("후보 4"), 0.61, {}),
+        ]
+
+        self.assertEqual(
+            recommender.target_count_for_category(
+                candidates,
+                maximum=6,
+                threshold=0.5,
+                recommended_minimum=3,
+                backfill_score_floor=0.65,
+            ),
+            3,
+        )
+
+    def test_security_does_not_backfill_below_absolute_floor(self) -> None:
+        candidates = [
+            (article("후보 1"), 0.917, {}),
+            (article("후보 2"), 0.64, {}),
+            (article("후보 3"), 0.63, {}),
+        ]
+
+        self.assertEqual(
+            recommender.target_count_for_category(
+                candidates,
+                maximum=6,
+                threshold=0.5,
+                recommended_minimum=3,
+                backfill_score_floor=0.65,
+            ),
+            1,
+        )
+
+    def test_enhanced_categories_share_recommended_minimum_and_absolute_floor(self) -> None:
+        for category in (CATEGORY_SECURITY, CATEGORY_INDUSTRY, CATEGORY_VENTURE):
+            with self.subTest(category=category):
+                self.assertEqual(
+                    recommender.CATEGORY_RECOMMENDED_MIN_COUNTS[category],
+                    3,
+                )
+                self.assertEqual(
+                    recommender.CATEGORY_BACKFILL_SCORE_FLOORS[category],
+                    0.65,
+                )
 
     def test_government_and_labor_have_stricter_score_floor(self) -> None:
         self.assertEqual(

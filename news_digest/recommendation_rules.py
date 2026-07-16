@@ -23,8 +23,8 @@ DEFAULT_WEIGHTS = {
 
 SEMANTIC_REDUNDANCY_BLEND = 0.75
 SEMANTIC_COSINE_FLOOR = 0.35
-QUALITY_SCORE_WINDOW = 0.06
-QUALITY_SCORE_CLIFF = 0.06
+QUALITY_SCORE_WINDOW = 0.08
+QUALITY_SCORE_CLIFF = 0.08
 
 # 기사 수 상한은 유지하면서, 오발행 비용이 큰 카테고리만 더 엄격하게 선별합니다.
 CATEGORY_MIN_SCORE_FLOORS = {
@@ -34,6 +34,19 @@ CATEGORY_MIN_SCORE_FLOORS = {
 CATEGORY_QUALITY_SCORE_WINDOWS = {
     CATEGORY_GOVERNMENT: 0.04,
     CATEGORY_LABOR: 0.04,
+}
+
+# 상대 품질 구간만으로 기사 수가 지나치게 줄어드는 카테고리는, 필수 조건을
+# 통과하고 절대 점수 하한도 만족하는 후보로 권장 최소 개수까지 보충합니다.
+CATEGORY_RECOMMENDED_MIN_COUNTS = {
+    CATEGORY_SECURITY: 3,
+    CATEGORY_INDUSTRY: 3,
+    CATEGORY_VENTURE: 3,
+}
+CATEGORY_BACKFILL_SCORE_FLOORS = {
+    CATEGORY_SECURITY: 0.65,
+    CATEGORY_INDUSTRY: 0.65,
+    CATEGORY_VENTURE: 0.65,
 }
 
 DEFAULT_CATEGORY_RANGES = {
@@ -82,7 +95,6 @@ DEFAULT_CATEGORY_TITLE_WEIGHTS = {
         "피지컬 AI": 11.0,
         "에이전틱 AI": 11.0,
         "AI 에이전트": 10.0,
-        "NPU": 8.0,
         "GPU": 7.0,
         "AI 반도체": 10.0,
         "AI 가속기": 10.0,
@@ -262,7 +274,6 @@ CATEGORY_KEYWORDS = {
         "휴머노이드",
         "자율주행",
         "컴퓨터비전",
-        "NPU",
         "GPU",
         "출시",
         "상용화",
@@ -845,7 +856,6 @@ INDUSTRY_STRONG_TOPIC_KEYWORDS = [
     "AI 반도체",
     "AI 가속기",
     "AI 칩",
-    "NPU",
     "GPU",
     "AI 인프라",
     "AI 데이터센터",

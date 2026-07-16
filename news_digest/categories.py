@@ -110,7 +110,6 @@ CATEGORY_KEYWORDS = {
         "자율주행",
         "로봇",
         "휴머노이드",
-        "npu",
         "gpu",
     ],
 }

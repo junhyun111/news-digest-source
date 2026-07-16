@@ -28,6 +28,8 @@ from .recommendation_rules import (
     QUALITY_SCORE_CLIFF,
     CATEGORY_MIN_SCORE_FLOORS,
     CATEGORY_QUALITY_SCORE_WINDOWS,
+    CATEGORY_RECOMMENDED_MIN_COUNTS,
+    CATEGORY_BACKFILL_SCORE_FLOORS,
     DEFAULT_CATEGORY_RANGES,
     DEFAULT_GLOBAL_TITLE_WEIGHTS,
     DEFAULT_CATEGORY_TITLE_WEIGHTS,
@@ -563,8 +565,10 @@ def target_count_for_category(
     maximum: int,
     threshold: float,
     quality_window: float = QUALITY_SCORE_WINDOW,
+    recommended_minimum: int = 0,
+    backfill_score_floor: float | None = None,
 ) -> int:
-    """상한 안에서 점수 절벽 이전의 고품질 후보 수만 반환합니다."""
+    """상대 품질 후보 수를 정하고, 필요하면 절대 하한 후보로 최소량을 보충합니다."""
     if maximum <= 0 or not candidates:
         return 0
 
@@ -572,12 +576,24 @@ def target_count_for_category(
     quality_floor = max(threshold, best_score - quality_window)
     qualified = [candidate for candidate in candidates if candidate[1] + 1e-9 >= quality_floor]
     limit = min(maximum, len(qualified))
+    target = limit
     for index in range(1, limit):
         previous_score = qualified[index - 1][1]
         current_score = qualified[index][1]
         if previous_score - current_score >= QUALITY_SCORE_CLIFF:
-            return index
-    return limit
+            target = index
+            break
+
+    if recommended_minimum > target and backfill_score_floor is not None:
+        absolute_floor = max(threshold, backfill_score_floor)
+        backfill_count = sum(
+            candidate[1] + 1e-9 >= absolute_floor for candidate in candidates
+        )
+        target = max(
+            target,
+            min(maximum, recommended_minimum, backfill_count),
+        )
+    return target
 
 
 def selection_threshold_for_category(category: str, configured_threshold: float) -> float:
@@ -931,6 +947,8 @@ def select_cch_mmr_articles(
             maximum=maximum,
             threshold=category_thresholds[category],
             quality_window=CATEGORY_QUALITY_SCORE_WINDOWS.get(category, QUALITY_SCORE_WINDOW),
+            recommended_minimum=CATEGORY_RECOMMENDED_MIN_COUNTS.get(category, 0),
+            backfill_score_floor=CATEGORY_BACKFILL_SCORE_FLOORS.get(category),
         )
         target_count = min(target_count, remaining_slots)
         if target_count <= 0:
