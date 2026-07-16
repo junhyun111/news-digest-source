@@ -133,9 +133,12 @@ def run_digest(
 
         config = Config.from_env()
         if send_prepared:
-            articles = load_prepared_digest(send_prepared)
+            prepared_path = Path(send_prepared)
+            articles = load_prepared_digest(prepared_path)
             send_digest(config, articles)
+            prepared_path.unlink()
             LOGGER.info("Sent %s prepared articles", len(articles))
+            LOGGER.info("Deleted sent prepared digest: %s", prepared_path)
             return 0
 
         diagnostics: list[dict[str, object]] = []

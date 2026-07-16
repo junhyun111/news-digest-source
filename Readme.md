@@ -77,6 +77,9 @@ python main.py --prepare-output prepared-digest.json
 python main.py --send-prepared prepared-digest.json
 ```
 
+`--send-prepared`는 이메일 발송이 성공하면 사용한 JSON 파일을 삭제합니다.
+발송이 실패하면 재시도할 수 있도록 JSON 파일을 보존합니다.
+
 수집부터 실제 메일 발송까지 실행합니다.
 
 ```powershell
