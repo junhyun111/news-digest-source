@@ -121,6 +121,33 @@ class SemanticScoringTests(unittest.TestCase):
         self.assertEqual(recommender.DEFAULT_CATEGORY_RANGES[CATEGORY_INDUSTRY], (0, 22))
         self.assertEqual(recommender.DEFAULT_CATEGORY_RANGES[CATEGORY_VENTURE], (0, 9))
 
+    def test_venture_uses_tighter_quality_window(self) -> None:
+        self.assertEqual(
+            recommender.CATEGORY_QUALITY_SCORE_WINDOWS[CATEGORY_VENTURE], 0.04
+        )
+
+    def test_venture_tight_window_backfills_to_target_without_filling_maximum(self) -> None:
+        candidates = [
+            (article("벤처 후보 1"), 0.94, {}),
+            (article("벤처 후보 2"), 0.88, {}),
+            (article("벤처 후보 3"), 0.84, {}),
+            (article("벤처 후보 4"), 0.80, {}),
+            (article("벤처 후보 5"), 0.76, {}),
+            (article("벤처 후보 6"), 0.72, {}),
+            (article("벤처 후보 7"), 0.68, {}),
+        ]
+
+        target = recommender.target_count_for_category(
+            candidates,
+            maximum=9,
+            threshold=0.5,
+            quality_window=recommender.CATEGORY_QUALITY_SCORE_WINDOWS[CATEGORY_VENTURE],
+            recommended_minimum=5,
+            backfill_score_floor=0.65,
+        )
+
+        self.assertEqual(target, 5)
+
     def test_government_and_labor_have_stricter_score_floor(self) -> None:
         self.assertEqual(
             recommender.selection_threshold_for_category(CATEGORY_GOVERNMENT, 0.5),
