@@ -107,14 +107,19 @@ class SemanticScoringTests(unittest.TestCase):
     def test_every_category_has_a_selection_policy(self) -> None:
         expected = {
             CATEGORY_INNODEP: (2, 0.65),
-            CATEGORY_SECURITY: (3, 0.65),
-            CATEGORY_INDUSTRY: (3, 0.50),
+            CATEGORY_SECURITY: (5, 0.50),
+            CATEGORY_INDUSTRY: (16, 0.50),
             CATEGORY_GOVERNMENT: (3, 0.65),
-            CATEGORY_VENTURE: (3, 0.65),
+            CATEGORY_VENTURE: (5, 0.65),
             CATEGORY_LABOR: (2, 0.65),
         }
 
         self.assertEqual(recommender.CATEGORY_SELECTION_POLICIES, expected)
+
+    def test_requested_category_maximums_are_configured(self) -> None:
+        self.assertEqual(recommender.DEFAULT_CATEGORY_RANGES[CATEGORY_SECURITY], (0, 10))
+        self.assertEqual(recommender.DEFAULT_CATEGORY_RANGES[CATEGORY_INDUSTRY], (0, 22))
+        self.assertEqual(recommender.DEFAULT_CATEGORY_RANGES[CATEGORY_VENTURE], (0, 9))
 
     def test_government_and_labor_have_stricter_score_floor(self) -> None:
         self.assertEqual(
@@ -305,6 +310,16 @@ class SemanticScoringTests(unittest.TestCase):
                         candidate, CATEGORY_INDUSTRY, 0.8, {"rule": 0.5}, 0.5
                     )
                 )
+
+    def test_industry_business_actions_are_not_standalone_score_keywords(self) -> None:
+        business_actions = {"출시", "도입", "구축", "공급", "수주", "협력"}
+
+        self.assertTrue(
+            business_actions.isdisjoint(recommender.category_keywords(CATEGORY_INDUSTRY))
+        )
+        self.assertTrue(
+            business_actions.isdisjoint(recommender.category_title_weights(CATEGORY_INDUSTRY))
+        )
 
     def test_industry_still_rejects_noise_without_strong_topic(self) -> None:
         candidate = article("AI 테마주 주가 급등")
