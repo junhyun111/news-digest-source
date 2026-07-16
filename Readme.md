@@ -7,6 +7,7 @@
 - 이노뎁, 보안, 업계 동향, 정부/공공, 벤처/금융, 생산/임금 기사 수집
 - 한국 시간 기준 발행 구간 필터링
 - 규칙 점수와 기준 임베딩을 결합한 추천
+- 업계동향을 7개 편집 의도로 분류하고 기존 점수 70%·편집 점수 30%로 결합
 - URL·제목·의미 유사도 기반 중복 제거
 - 카테고리별 목표 수량과 상한 적용
 - 텍스트 및 반응형 HTML 이메일 생성
@@ -59,6 +60,9 @@ TIMEZONE=Asia/Seoul
 ```powershell
 python main.py --dry-run
 ```
+
+드라이런 하단에는 업계동향 후보의 AI 중심성, 산업 중요도, 편집 의도,
+기존/편집/최종 점수와 탈락 이유가 함께 출력됩니다.
 
 상세 로그를 함께 출력합니다.
 
@@ -145,6 +149,8 @@ python main.py
   → 발행 시각 필터링
   → 제외 규칙과 중복 제거
   → 규칙·최신성·출처·의미 점수 계산
+  → 업계동향 AI 중심성·산업 중요도·홍보성·7개 의도 점수 계산
+  → 업계동향 기존 점수 70% + 편집 점수 30% 결합
   → 카테고리별 목표/상한과 MMR 적용
   → 카테고리 간 중복 제거
   → 이메일 렌더링 및 SMTP 발송
@@ -161,6 +167,7 @@ python main.py
 | `news_digest/naver.py` | 네이버 API 호출과 응답 파싱 |
 | `news_digest/pipeline.py` | 카테고리별 수집·추천과 최종 중복 제거 |
 | `news_digest/recommendation_rules.py` | 추천 키워드, 제외 조건, 목표와 상한 |
+| `news_digest/industry_editorial.py` | 업계동향 7개 의도, 중심성·중요도·홍보성 편집 점수 |
 | `news_digest/cch_mmr_recommender.py` | 점수 계산과 MMR 기반 선별 |
 | `news_digest/semantic_embeddings.py` | 기준 임베딩과 의미 유사도 계산 |
 | `news_digest/filters.py` | 발행 구간과 fallback 선별 |

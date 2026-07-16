@@ -11,6 +11,11 @@ import numpy as np
 from news_digest import cch_mmr_recommender as recommender
 from news_digest import pipeline
 from news_digest import semantic_embeddings
+from news_digest.industry_editorial import (
+    INDUSTRY_INTENTS,
+    IndustryEditorialAssessment,
+    assess_industry_article,
+)
 from news_digest.categories import (
     CATEGORY_GOVERNMENT,
     CATEGORY_INDUSTRY,
@@ -191,6 +196,38 @@ class SemanticScoringTests(unittest.TestCase):
 
         self.assertEqual([item.title for item in selected], ["첫 기사", "다양한 기사"])
 
+    def test_industry_mmr_limits_one_editorial_intent_to_four_articles(self) -> None:
+        candidates = [
+            (
+                article(f"기업{index}, AI 플랫폼 신제품 {index} 공개", url=f"https://source{index}.com/{index}"),
+                0.9 - index * 0.01,
+                {
+                    "intent": "model_platform",
+                    "intent_label": "모델·플랫폼·빅테크",
+                    "centrality": 0.9,
+                    "importance": 0.8,
+                    "intent_score": 0.85,
+                    "editorial_score": 0.85,
+                },
+            )
+            for index in range(5)
+        ]
+        with (
+            patch.object(recommender, "is_similar_to_selected", return_value=False),
+            patch.object(recommender, "redundancy_score", return_value=0.0),
+        ):
+            selected = recommender.mmr_select(
+                candidates,
+                quota=5,
+                category=CATEGORY_INDUSTRY,
+                lambda_value=0.7,
+                already_selected=set(),
+                selected_articles=[],
+                selected_industry_companies=set(),
+            )
+
+        self.assertEqual(len(selected), 4)
+
     def test_overlapping_keywords_count_only_the_strongest_phrase(self) -> None:
         matches = recommender.strongest_keyword_matches(
             "AI 통합관제센터 구축",
@@ -357,6 +394,22 @@ class SemanticScoringTests(unittest.TestCase):
             )
         )
 
+        stock_candidate = article("대기업 투자 기대 커진 로봇주, 피지컬 AI 테마 상승")
+        self.assertTrue(recommender.is_industry_noise(stock_candidate))
+
+    def test_ai_mentioned_only_in_body_does_not_pass_centrality_gate(self) -> None:
+        candidate = Article(
+            title="오세훈 서울시장, 골목상권 정책 발표",
+            description="본문에서 AI와 XR 산업을 함께 언급했다.",
+            originallink="https://example.com/politics",
+            link="",
+            pub_date=datetime(2026, 7, 14, tzinfo=timezone.utc),
+            query="AI 시장",
+        )
+        assessment = assess_industry_article(candidate, semantic_relevance=0.9)
+
+        self.assertLess(assessment.centrality, 0.6)
+
     def test_security_accepts_video_surveillance_article(self) -> None:
         candidate = article("보령시, 방범 CCTV 확충하고 통합관제센터 연계")
 
@@ -409,6 +462,20 @@ class SemanticScoringTests(unittest.TestCase):
         with (
             patch.object(recommender, "rule_score", return_value=0.4),
             patch.object(recommender, "semantic_category_score", return_value=0.8),
+            patch.object(
+                recommender,
+                "assess_industry_article",
+                return_value=IndustryEditorialAssessment(
+                    centrality=0.9,
+                    importance=0.8,
+                    promotionality=0.0,
+                    intent="semiconductor_infra",
+                    intent_label=INDUSTRY_INTENTS["semiconductor_infra"],
+                    intent_score=0.85,
+                    editorial_score=0.9,
+                    intent_scores={},
+                ),
+            ),
         ):
             score, components = recommender.relevance_score(
                 candidate,
@@ -418,8 +485,42 @@ class SemanticScoringTests(unittest.TestCase):
                 timezone="UTC",
             )
 
-        self.assertAlmostEqual(score, 0.54)
+        self.assertAlmostEqual(components["base_score"], 0.54)
+        self.assertAlmostEqual(score, 0.648)
         self.assertEqual(components["semantic"], 0.8)
+
+    def test_industry_editorial_detects_ai_intent_and_importance(self) -> None:
+        candidate = replace(
+            article("엔비디아, 차세대 AI GPU 공개하고 데이터센터 생산 확대"),
+            query="AI 반도체",
+        )
+
+        assessment = assess_industry_article(
+            candidate,
+            semantic_relevance=0.75,
+            semantic_intent_scores={"semiconductor_infra": 0.86},
+        )
+
+        self.assertEqual(assessment.intent, "semiconductor_infra")
+        self.assertGreaterEqual(assessment.centrality, 0.8)
+        self.assertGreaterEqual(assessment.importance, 0.3)
+
+    def test_industry_editorial_rejects_low_information_promotion(self) -> None:
+        candidate = replace(article("AI 체험단 이벤트"), query="기업 AI")
+        assessment = assess_industry_article(candidate, semantic_relevance=0.5)
+        components = {
+            "editorial_score": assessment.editorial_score,
+            "centrality": assessment.centrality,
+            "importance": assessment.importance,
+            "promotionality": assessment.promotionality,
+            "intent_score": assessment.intent_score,
+        }
+
+        self.assertFalse(
+            recommender.is_eligible_category_candidate(
+                candidate, CATEGORY_INDUSTRY, 0.8, components, 0.5
+            )
+        )
 
     def test_unsupported_semantic_score_preserves_existing_relevance(self) -> None:
         candidate = article("일반 기사")
@@ -476,6 +577,7 @@ class SemanticEmbeddingServiceTests(unittest.TestCase):
         service.model = FakeModel()
         service.article_cache = {}
         service.references = {}
+        service.industry_intent_references = {}
         candidate = article("AI 반도체")
 
         service.prepare_articles([candidate])
@@ -488,6 +590,10 @@ class SemanticEmbeddingServiceTests(unittest.TestCase):
         self.assertAlmostEqual(
             service.category_score(candidate, CATEGORY_INDUSTRY), 1.0, places=6
         )
+
+        service.industry_intent_references["semiconductor_infra"] = expected.reshape(1, -1)
+        intent_scores = service.industry_intent_scores(candidate)
+        self.assertAlmostEqual(intent_scores["semiconductor_infra"], 1.0, places=6)
 
 
 class PipelineSemanticDeduplicationTests(unittest.TestCase):

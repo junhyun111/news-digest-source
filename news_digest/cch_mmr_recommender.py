@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from dataclasses import replace
 from datetime import datetime
-from math import exp
+from math import ceil, exp
 import logging
 import os
 import re
-from typing import Iterable
+from typing import Callable, Iterable
 
 from . import settings
 from .categories import (
@@ -19,6 +19,13 @@ from .categories import (
     source_name,
 )
 from .models import Article
+from .industry_editorial import (
+    EDITORIAL_MIN_CENTRALITY,
+    EDITORIAL_MIN_IMPORTANCE,
+    EDITORIAL_MIN_INTENT,
+    INDUSTRY_INTENTS,
+    assess_industry_article,
+)
 from .keyword_matching import keyword_matches_text
 from .normalization import normalize_url
 from .recommendation_rules import (
@@ -58,6 +65,7 @@ from .recommendation_rules import (
     INDUSTRY_STRONG_TOPIC_KEYWORDS,
     INDUSTRY_GENERIC_TECH_KEYWORDS,
     INDUSTRY_NOISE_KEYWORDS,
+    INDUSTRY_HARD_FINANCE_NOISE_KEYWORDS,
     GOVERNMENT_NOISE_ALLOWED_TOPICS,
     GOVERNMENT_PUBLIC_ACTOR_KEYWORDS,
     GOVERNMENT_PRIMARY_KEYWORDS,
@@ -75,12 +83,17 @@ from .semantic_embeddings import (
     is_semantic_duplicate,
     prepare_semantic_articles,
     semantic_category_score,
+    semantic_industry_intent_scores,
     semantic_similarity,
 )
 from .text_similarity import lexical_cosine, title_similarity
 from .timezones import get_timezone
 
 LOGGER = logging.getLogger(__name__)
+INDUSTRY_INTENT_LIMIT = 4
+INDUSTRY_SOURCE_LIMIT = 3
+
+DiagnosticSink = Callable[[dict[str, object]], None]
 
 
 def article_text(article: Article) -> str:
@@ -313,6 +326,8 @@ def has_industry_core_content(article: Article) -> bool:
 
 
 def is_industry_noise(article: Article) -> bool:
+    if has_any_keyword(article, INDUSTRY_HARD_FINANCE_NOISE_KEYWORDS):
+        return True
     return has_any_keyword(article, INDUSTRY_NOISE_KEYWORDS) and not has_industry_strong_topic(article)
 
 
@@ -322,6 +337,32 @@ def industry_company_key(article: Article) -> str:
         if any(alias.casefold() in text for alias in aliases):
             return company
     return ""
+
+
+def industry_actor_key(article: Article) -> str:
+    """알려진 기업 외에도 제목 선두의 기업·기관명을 다양성 제한에 사용합니다."""
+    company = industry_company_key(article)
+    if company:
+        return company
+    first_clause = re.split(r"[,，·…:|]", article.title, maxsplit=1)[0].strip()
+    first_clause = re.sub(r"^[\[【(].*?[\]】)]\s*", "", first_clause).strip()
+    generic = {"정부", "업계", "전문가", "한국", "국내", "글로벌", "AI", "인공지능"}
+    if 2 <= len(first_clause) <= 24 and first_clause not in generic:
+        return first_clause.casefold()
+    return ""
+
+
+def industry_event_key(article: Article) -> str:
+    """매체가 달라도 같은 사건으로 보이는 기사를 묶는 보수적인 서명입니다."""
+    tokens = re.findall(r"[가-힣A-Za-z0-9]+", article.title.casefold())
+    stopwords = {
+        "ai", "인공지능", "관련", "대한", "위한", "통해", "기반", "기술",
+        "기업", "산업", "시장", "국내", "글로벌", "공개", "발표",
+    }
+    informative = [token for token in tokens if token not in stopwords and len(token) >= 2]
+    if len(informative) < 3:
+        return ""
+    return "|".join(sorted(set(informative))[:6])
 
 
 def security_actor_key(article: Article) -> str:
@@ -492,7 +533,7 @@ def relevance_score(
         if weights.get(name, 0.0) > 0.0
     }
     total_weight = sum(active_weights.values()) or 1.0
-    total = sum(active_weights[name] * feature_values[name] for name in active_weights) / total_weight
+    base_total = sum(active_weights[name] * feature_values[name] for name in active_weights) / total_weight
     components = {
         "rule": rule,
         "recency": recency,
@@ -502,6 +543,26 @@ def relevance_score(
         "semantic": semantic or 0.0,
         "seed": seed,
     }
+    total = base_total
+    if category == CATEGORY_INDUSTRY:
+        assessment = assess_industry_article(
+            article,
+            semantic_relevance=semantic or 0.0,
+            semantic_intent_scores=semantic_industry_intent_scores(article),
+        )
+        components.update(
+            {
+                "base_score": round(base_total, 4),
+                "centrality": assessment.centrality,
+                "importance": assessment.importance,
+                "promotionality": assessment.promotionality,
+                "intent_score": assessment.intent_score,
+                "editorial_score": assessment.editorial_score,
+                "intent": assessment.intent,
+                "intent_label": assessment.intent_label,
+            }
+        )
+        total = 0.70 * base_total + 0.30 * assessment.editorial_score
     # 내부 순위 점수는 상한으로 자르지 않아 후보 사이의 차이를 보존합니다.
     return round(total, 4), components
 
@@ -531,9 +592,9 @@ def reason_for(article: Article, category: str, components: dict[str, float]) ->
         parts.append(f"제목에 {', '.join(matched_title_keywords)} 핵심 키워드 포함")
     if matched_keywords:
         parts.append(f"{', '.join(matched_keywords)} 키워드가 {category}와 관련")
-    if components["recency"] >= 0.35:
+    if components.get("recency", 0.0) >= 0.35:
         parts.append("최근 발행 기사")
-    if components["source"] >= 0.8:
+    if components.get("source", 0.0) >= 0.8:
         parts.append("출처 신뢰도 점수가 높음")
     if components.get("entity", 0.0) >= 0.85:
         parts.append("이노뎁 관련성이 높음")
@@ -541,6 +602,13 @@ def reason_for(article: Article, category: str, components: dict[str, float]) ->
         parts.append("한글 제목 기사")
     if components.get("semantic", 0.0) >= 0.70:
         parts.append("과거 관련 기사와 의미가 유사함")
+    if category == CATEGORY_INDUSTRY and components.get("intent_label"):
+        parts.insert(
+            0,
+            f"{components['intent_label']} 의도"
+            f"(중심성 {components.get('centrality', 0.0):.2f}, "
+            f"중요도 {components.get('importance', 0.0):.2f})",
+        )
     return "; ".join(parts[:3])
 
 
@@ -623,6 +691,33 @@ def log_score_distribution(category: str, scores: list[float]) -> None:
     )
 
 
+def industry_rejection_reasons(
+    article: Article,
+    score: float,
+    components: dict[str, object],
+    threshold: float,
+) -> list[str]:
+    reasons: list[str] = []
+    if score < threshold:
+        reasons.append("최종 점수 하한 미달")
+    if is_industry_noise(article):
+        reasons.append("금융·부동산성 노이즈")
+    if not has_industry_core_content(article):
+        reasons.append("AI·핵심 기술 관련성 부족")
+    if components.get("centrality", 0.0) < EDITORIAL_MIN_CENTRALITY:
+        reasons.append("AI 중심성 부족")
+    if components.get("importance", 0.0) < EDITORIAL_MIN_IMPORTANCE:
+        reasons.append("산업 중요도 부족")
+    if components.get("intent_score", 0.0) < EDITORIAL_MIN_INTENT:
+        reasons.append("편집 의도 불명확")
+    if (
+        components.get("promotionality", 0.0) >= 0.72
+        and components.get("importance", 0.0) < 0.58
+    ):
+        reasons.append("홍보성 대비 정보량 부족")
+    return reasons
+
+
 def is_eligible_category_candidate(
     article: Article,
     category: str,
@@ -643,8 +738,9 @@ def is_eligible_category_candidate(
         if not has_security_core_title(article):
             return False
     if category == CATEGORY_INDUSTRY:
-        if is_industry_noise(article) or not has_industry_core_content(article):
-            return False
+        if "editorial_score" not in components:
+            return not is_industry_noise(article) and has_industry_core_content(article)
+        return not industry_rejection_reasons(article, score, components, threshold)
     if category == CATEGORY_GOVERNMENT:
         if not is_government_priority_article(article):
             return False
@@ -723,6 +819,34 @@ def deduplicate_cch_articles(articles: Iterable[Article]) -> list[Article]:
     return unique
 
 
+def industry_diagnostic(
+    article: Article,
+    score: float,
+    components: dict[str, object],
+    decision: str,
+    reason: str,
+) -> dict[str, object]:
+    return {
+        "title": article.title,
+        "url": article.canonical_url,
+        "query": article.query,
+        "decision": decision,
+        "reason": reason,
+        "score": round(score, 4),
+        "base_score": round(float(components.get("base_score", score)), 4),
+        "editorial_score": round(float(components.get("editorial_score", 0.0)), 4),
+        "centrality": round(float(components.get("centrality", 0.0)), 4),
+        "importance": round(float(components.get("importance", 0.0)), 4),
+        "promotionality": round(float(components.get("promotionality", 0.0)), 4),
+        "intent": str(components.get("intent", "")),
+        "intent_label": str(components.get("intent_label", "")),
+        "intent_score": round(float(components.get("intent_score", 0.0)), 4),
+        "company": industry_actor_key(article),
+        "source": source_name(article),
+        "event": industry_event_key(article),
+    }
+
+
 def mmr_select(
     candidates: list[tuple[Article, float, dict[str, float]]],
     quota: int,
@@ -732,10 +856,15 @@ def mmr_select(
     selected_articles: list[Article],
     selected_industry_companies: set[str],
     selected_security_actors: set[str] | None = None,
+    diagnostic_sink: DiagnosticSink | None = None,
 ) -> list[Article]:
     """관련도는 높이고, 이미 고른 기사와 너무 비슷한 기사는 피해서 선택합니다."""
     selected: list[Article] = []
     active_security_actors = selected_security_actors if selected_security_actors is not None else set()
+    intent_counts = {intent: 0 for intent in INDUSTRY_INTENTS}
+    intent_limit = max(INDUSTRY_INTENT_LIMIT, ceil(quota * 0.40))
+    source_counts: dict[str, int] = {}
+    selected_events: set[str] = set()
     remaining = [
         candidate
         for candidate in candidates
@@ -743,8 +872,8 @@ def mmr_select(
         and not is_similar_to_selected(candidate[0], selected_articles)
         and (
             category != CATEGORY_INDUSTRY
-            or not industry_company_key(candidate[0])
-            or industry_company_key(candidate[0]) not in selected_industry_companies
+            or not industry_actor_key(candidate[0])
+            or industry_actor_key(candidate[0]) not in selected_industry_companies
         )
         and (
             category != CATEGORY_SECURITY
@@ -753,6 +882,34 @@ def mmr_select(
         )
     ]
     while remaining and len(selected) < quota:
+        if category == CATEGORY_INDUSTRY:
+            eligible_remaining = []
+            for candidate in remaining:
+                article, relevance, components = candidate
+                intent = str(components.get("intent", ""))
+                actor = industry_actor_key(article)
+                source = source_name(article)
+                event = industry_event_key(article)
+                block_reason = ""
+                if intent and intent_counts.get(intent, 0) >= intent_limit:
+                    block_reason = "동일 편집 의도 상한"
+                elif actor and actor in selected_industry_companies:
+                    block_reason = "동일 기업·기관 중복"
+                elif source_counts.get(source, 0) >= INDUSTRY_SOURCE_LIMIT:
+                    block_reason = "동일 매체 상한"
+                elif event and event in selected_events:
+                    block_reason = "동일 사건 중복"
+                if block_reason:
+                    if diagnostic_sink is not None:
+                        diagnostic_sink(
+                            industry_diagnostic(article, relevance, components, "탈락", block_reason)
+                        )
+                    continue
+                eligible_remaining.append(candidate)
+            remaining = eligible_remaining
+            if not remaining:
+                break
+
         best_index = 0
         best_score = float("-inf")
         for index, (article, relevance, components) in enumerate(remaining):
@@ -775,22 +932,36 @@ def mmr_select(
         )
         already_selected.add(selected_article.canonical_url)
         selected.append(selected_article)
+        if category == CATEGORY_INDUSTRY:
+            intent = str(components.get("intent", ""))
+            actor = industry_actor_key(selected_article)
+            source = source_name(selected_article)
+            event = industry_event_key(selected_article)
+            if intent:
+                intent_counts[intent] = intent_counts.get(intent, 0) + 1
+            if actor:
+                selected_industry_companies.add(actor)
+            source_counts[source] = source_counts.get(source, 0) + 1
+            if event:
+                selected_events.add(event)
+            if diagnostic_sink is not None:
+                diagnostic_sink(
+                    industry_diagnostic(selected_article, relevance, components, "선정", "MMR 선정")
+                )
         # 품질 개수는 target_count_for_category가 결정하고, MMR 단계에서는
         # 선택한 기사와 실질적으로 같은 후보만 제거한 뒤 다양성 순서로 재정렬합니다.
-        remaining = [
-            candidate
-            for candidate in remaining
-            if not is_similar_to_selected(candidate[0], [selected_article])
-        ]
-        if category == CATEGORY_INDUSTRY:
-            company = industry_company_key(selected_article)
-            if company:
-                selected_industry_companies.add(company)
-                remaining = [
-                    candidate
-                    for candidate in remaining
-                    if industry_company_key(candidate[0]) != company
-                ]
+        diverse_remaining = []
+        for candidate in remaining:
+            if is_similar_to_selected(candidate[0], [selected_article]):
+                if category == CATEGORY_INDUSTRY and diagnostic_sink is not None:
+                    diagnostic_sink(
+                        industry_diagnostic(
+                            candidate[0], candidate[1], candidate[2], "탈락", "제목·임베딩 중복"
+                        )
+                    )
+                continue
+            diverse_remaining.append(candidate)
+        remaining = diverse_remaining
         if category == CATEGORY_SECURITY:
             actor = security_actor_key(selected_article)
             if actor:
@@ -800,6 +971,11 @@ def mmr_select(
                     for candidate in remaining
                     if security_actor_key(candidate[0]) != actor
                 ]
+    if category == CATEGORY_INDUSTRY and diagnostic_sink is not None:
+        for article, relevance, components in remaining:
+            diagnostic_sink(
+                industry_diagnostic(article, relevance, components, "탈락", "목표 건수·상한 밖")
+            )
     return selected
 
 
@@ -813,6 +989,7 @@ def select_cch_mmr_articles(
     category_quotas: dict[str, int] | None = None,
     lambda_value: float = 0.70,
     target_categories: list[str] | None = None,
+    diagnostic_sink: DiagnosticSink | None = None,
 ) -> list[Article]:
     """CCH-MMR 추천의 진입점입니다. 점수화, 후보 판정, quota, MMR 선택을 순서대로 수행합니다."""
     if not articles or max_articles <= 0:
@@ -836,16 +1013,28 @@ def select_cch_mmr_articles(
         for category in active_categories
     }
     # 명백한 제외 대상과 중복 기사를 먼저 걷어낸 뒤 카테고리별 점수를 계산합니다.
-    unique_articles = [
-        article
-        for article in deduplicate_cch_articles(articles)
-        if not is_blacklisted_article(article)
-        and not is_negative_innodep_article(article)
-        and not is_private_company_government_pr_article(article)
-        and not is_private_company_government_business_article(article)
-        and not is_general_government_noise(article)
-        and not has_any_keyword(article, GOVERNMENT_EXCLUDE_KEYWORDS)
-    ]
+    unique_articles = []
+    for article in deduplicate_cch_articles(articles):
+        global_reason = ""
+        if is_blacklisted_article(article):
+            global_reason = "전역 블랙리스트"
+        elif is_negative_innodep_article(article):
+            global_reason = "이노뎁 부정 기사"
+        elif is_private_company_government_pr_article(article):
+            global_reason = "기업 정부 홍보성 기사"
+        elif is_private_company_government_business_article(article):
+            global_reason = "기업 정부사업 성과 기사"
+        elif is_general_government_noise(article):
+            global_reason = "일반 행정 노이즈"
+        elif has_any_keyword(article, GOVERNMENT_EXCLUDE_KEYWORDS):
+            global_reason = "정부 기사 제외어"
+        if global_reason:
+            if CATEGORY_INDUSTRY in active_categories and diagnostic_sink is not None:
+                diagnostic_sink(
+                    industry_diagnostic(article, 0.0, {}, "탈락", global_reason)
+                )
+            continue
+        unique_articles.append(article)
     if any(category in ENHANCED_CATEGORIES for category in active_categories):
         prepare_semantic_articles(unique_articles)
 
@@ -871,6 +1060,19 @@ def select_cch_mmr_articles(
                     article, category, score, components, category_thresholds[category]
                 ):
                     scored_by_category[category].append((article, score, components))
+                elif category == CATEGORY_INDUSTRY and diagnostic_sink is not None:
+                    reasons = industry_rejection_reasons(
+                        article, score, components, category_thresholds[category]
+                    )
+                    diagnostic_sink(
+                        industry_diagnostic(
+                            article,
+                            score,
+                            components,
+                            "탈락",
+                            ", ".join(reasons) or "업계동향 후보 조건 미달",
+                        )
+                    )
             continue
 
         best_category, _, best_score, best_components = max(article_scores, key=lambda item: item[2])
@@ -962,6 +1164,7 @@ def select_cch_mmr_articles(
             selected_articles=selected,
             selected_industry_companies=selected_industry_companies,
             selected_security_actors=selected_security_actors,
+            diagnostic_sink=diagnostic_sink if category == CATEGORY_INDUSTRY else None,
         )
         selected.extend(category_selected)
 

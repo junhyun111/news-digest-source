@@ -899,6 +899,15 @@ INDUSTRY_NOISE_KEYWORDS = [
     "공시",
 ]
 
+INDUSTRY_HARD_FINANCE_NOISE_KEYWORDS = [
+    "로봇주",
+    "AI주",
+    "인공지능주",
+    "반도체주",
+    "관련주",
+    "매수세",
+]
+
 GOVERNMENT_NOISE_ALLOWED_TOPICS = [
     "AI",
     "인공지능",
@@ -1054,6 +1063,7 @@ GOVERNMENT_NORMAL_ACTION_KEYWORDS = [
 ]
 
 INDUSTRY_COMPANY_ALIASES = {
+    "아이에이": ["아이에이", "아이에이그룹"],
     "네이버": ["네이버", "NAVER"],
     "카카오": ["카카오", "Kakao"],
     "삼성전자": ["삼성전자", "삼성"],

@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Iterable
 
 from .categories import CATEGORY_INDUSTRY, CATEGORY_SECURITY, CATEGORY_VENTURE
+from .industry_editorial import INDUSTRY_INTENTS
 from .models import Article
 
 
@@ -73,6 +74,7 @@ class SemanticEmbeddingService:
             category: self._load_reference(stem)
             for category, stem in CATEGORY_REFERENCE_STEMS.items()
         }
+        self.industry_intent_references = self._load_industry_intent_references()
         LOGGER.info(
             "Semantic recommendation enabled: model=%s reference_dir=%s",
             MODEL_NAME,
@@ -90,6 +92,21 @@ class SemanticEmbeddingService:
             indices = self.np.linspace(0, len(vectors) - 1, REFERENCE_LIMIT, dtype=int)
             vectors = self.np.asarray(vectors[indices], dtype=self.np.float32)
         return vectors
+
+    def _load_industry_intent_references(self) -> dict[str, object]:
+        intent_dir = self.embedding_dir / "industry_intents"
+        references: dict[str, object] = {}
+        for intent in INDUSTRY_INTENTS:
+            path = intent_dir / f"{intent}_embeddings.npy"
+            if not path.exists():
+                LOGGER.warning("Industry intent embedding not found: %s", path)
+                continue
+            vectors = self.np.load(path, mmap_mode="r")
+            if vectors.ndim != 2 or vectors.shape[1] <= 0:
+                LOGGER.warning("Invalid industry intent embedding shape: %s -> %s", path, vectors.shape)
+                continue
+            references[intent] = vectors
+        return references
 
     def _normalize_rows(self, vectors):
         norms = self.np.linalg.norm(vectors, axis=1, keepdims=True)
@@ -148,6 +165,20 @@ class SemanticEmbeddingService:
         nearest = self.np.partition(similarities, len(similarities) - top_k)[-top_k:]
         return float(self.np.clip(nearest.mean(), 0.0, 1.0))
 
+    def industry_intent_scores(self, article: Article) -> dict[str, float]:
+        article_vectors = self.vectors_for(article)
+        if article_vectors is None:
+            return {}
+        scores: dict[str, float] = {}
+        for intent, references in self.industry_intent_references.items():
+            if len(references) == 0:
+                continue
+            similarities = references @ article_vectors.combined
+            top_k = min(REFERENCE_TOP_K, len(similarities))
+            nearest = self.np.partition(similarities, len(similarities) - top_k)[-top_k:]
+            scores[intent] = float(self.np.clip(nearest.mean(), 0.0, 1.0))
+        return scores
+
     def combined_similarity(self, left: Article, right: Article) -> float | None:
         left_vectors = self.vectors_for(left)
         right_vectors = self.vectors_for(right)
@@ -202,6 +233,13 @@ def semantic_category_score(article: Article, category: str) -> float | None:
         return None
     service = get_semantic_service()
     return service.category_score(article, category) if service is not None else None
+
+
+def semantic_industry_intent_scores(article: Article) -> dict[str, float]:
+    # 업계동향 점수화 전 prepare_semantic_articles에서 준비한 동일 서비스를
+    # 재사용합니다. 이 함수 단독 호출이 모델 다운로드를 유발하지 않게 합니다.
+    service = _SERVICE
+    return service.industry_intent_scores(article) if service is not None else {}
 
 
 def semantic_similarity(left: Article, right: Article) -> float | None:

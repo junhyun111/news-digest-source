@@ -8,6 +8,7 @@ from .categories import (
     CATEGORY_SECURITY,
     CATEGORY_VENTURE,
 )
+from .industry_editorial import INDUSTRY_INTENT_QUERIES
 
 
 CATEGORY_QUERIES = {
@@ -31,23 +32,9 @@ CATEGORY_QUERIES = {
         "화재 감지 CCTV",
     ],
     CATEGORY_INDUSTRY: [
-        "온디바이스 AI",
-        "엣지 AI",
-        "피지컬 AI",
-        "에이전틱 AI",
-        "AI 에이전트",
-        "AI 기술 상용화",
-        "AI 데이터센터",
-        "엔비디아 AI 인프라",
-        "AI 반도체",
-        "자율주행 AI",
-        "컴퓨터비전",
-        "스마트시티",
-        "지능형교통 AI",
-        "스마트팩토리 AI",
-        "디지털트윈",
-        "로봇 자동화",
-        "AI 시장 동향",
+        query
+        for queries in INDUSTRY_INTENT_QUERIES.values()
+        for query in queries
     ],
     CATEGORY_GOVERNMENT: [
         "공공 AI",

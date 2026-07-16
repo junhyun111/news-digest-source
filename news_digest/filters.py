@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from dataclasses import replace
 from datetime import datetime, timedelta
+from typing import Callable
 
+from .categories import CATEGORY_INDUSTRY
 from .cch_mmr_recommender import select_cch_mmr_articles
 from .keyword_fallback import score_article
 from .models import Article
@@ -83,12 +85,38 @@ def select_category_articles(
     recommendation_weights: dict[str, float] | None = None,
     category_quotas: dict[str, int] | None = None,
     mmr_lambda: float = 0.70,
+    diagnostic_sink: Callable[[dict[str, object]], None] | None = None,
 ) -> list[Article]:
     recommendation_articles = [
         article
         for article in articles
         if is_in_recommendation_range(article, now=now, timezone=timezone)
     ]
+    if category == CATEGORY_INDUSTRY and diagnostic_sink is not None:
+        recommendation_urls = {article.canonical_url for article in recommendation_articles}
+        for article in articles:
+            if article.canonical_url not in recommendation_urls:
+                diagnostic_sink(
+                    {
+                        "title": article.title,
+                        "url": article.canonical_url,
+                        "query": article.query,
+                        "decision": "탈락",
+                        "reason": "추천 시간 범위 밖",
+                        "score": 0.0,
+                        "base_score": 0.0,
+                        "editorial_score": 0.0,
+                        "centrality": 0.0,
+                        "importance": 0.0,
+                        "promotionality": 0.0,
+                        "intent": "",
+                        "intent_label": "",
+                        "intent_score": 0.0,
+                        "company": "",
+                        "source": "",
+                        "event": "",
+                    }
+                )
     selected = select_cch_mmr_articles(
         recommendation_articles,
         min_score=min_score,
@@ -99,9 +127,13 @@ def select_category_articles(
         category_quotas=category_quotas,
         lambda_value=mmr_lambda,
         target_categories=[category],
+        diagnostic_sink=diagnostic_sink,
     )
     if selected:
         return selected
+    if category == CATEGORY_INDUSTRY:
+        # 업계동향은 AI 중심성·중요도·의도 게이트를 우회해 보충하지 않습니다.
+        return []
 
     return select_keyword_fallback_articles(
         recommendation_articles,

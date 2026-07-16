@@ -1,0 +1,57 @@
+{
+  "classification_version": 1,
+  "created_at_utc": "2026-07-16T04:46:24.978846+00:00",
+  "source_embedding_file": "news_industry_trends_embeddings.npy",
+  "source_metadata_file": "news_industry_trends_metadata.json",
+  "source_rows": 3311,
+  "dimension": 384,
+  "model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+  "source_weights": {
+    "title": 0.7,
+    "summary": 0.3
+  },
+  "method": "high_precision_rule_seeds + centroid cosine + MMR references",
+  "semantic_weight": 0.75,
+  "rule_weight": 0.25,
+  "reference_limit": 100,
+  "duplicate_cosine": 0.94,
+  "label_csv": "output\\news_industry_trends_intent_labels.csv",
+  "metadata_file": "industry_intents_metadata.json",
+  "intents": {
+    "model_platform": {
+      "label": "모델·플랫폼·빅테크",
+      "reference_rows": 100,
+      "primary_rows": 517
+    },
+    "semiconductor_infra": {
+      "label": "반도체·인프라",
+      "reference_rows": 100,
+      "primary_rows": 502
+    },
+    "enterprise_adoption": {
+      "label": "기업 도입·업무 혁신",
+      "reference_rows": 100,
+      "primary_rows": 481
+    },
+    "physical_manufacturing": {
+      "label": "제조·로봇·피지컬 AI",
+      "reference_rows": 100,
+      "primary_rows": 1087
+    },
+    "vertical_applications": {
+      "label": "산업별 응용",
+      "reference_rows": 100,
+      "primary_rows": 119
+    },
+    "market_supply_chain": {
+      "label": "시장·경쟁·공급망",
+      "reference_rows": 100,
+      "primary_rows": 190
+    },
+    "regulation_social": {
+      "label": "규제·안전·사회 영향",
+      "reference_rows": 100,
+      "primary_rows": 415
+    }
+  }
+}
