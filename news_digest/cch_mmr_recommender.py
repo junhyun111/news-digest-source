@@ -19,6 +19,7 @@ from .categories import (
     source_name,
 )
 from .models import Article
+from .keyword_matching import keyword_matches_text
 from .normalization import normalize_url
 from .recommendation_rules import (
     DEFAULT_WEIGHTS,
@@ -88,35 +89,29 @@ def article_text(article: Article) -> str:
 
 
 def contains_innodep(article: Article) -> bool:
-    text = article_text(article).casefold()
-    return any(entity.casefold() in text for entity in INNODEP_ENTITIES)
+    return text_has_any_keyword(article_text(article), INNODEP_ENTITIES)
 
 
 def has_innodep_title(article: Article) -> bool:
-    title = article.title.casefold()
-    return any(entity.casefold() in title for entity in INNODEP_ENTITIES)
+    return text_has_any_keyword(article.title, INNODEP_ENTITIES)
 
 
 def is_blacklisted_article(article: Article) -> bool:
-    text = article_text(article).casefold()
-    return any(keyword.casefold() in text for keyword in BLACKLIST_KEYWORDS)
+    return text_has_any_keyword(article_text(article), BLACKLIST_KEYWORDS)
 
 
 def is_negative_innodep_article(article: Article) -> bool:
     if not contains_innodep(article):
         return False
-    text = article_text(article).casefold()
-    return any(keyword.casefold() in text for keyword in INNODEP_NEGATIVE_KEYWORDS)
+    return text_has_any_keyword(article_text(article), INNODEP_NEGATIVE_KEYWORDS)
 
 
 def has_any_keyword(article: Article, keywords: list[str]) -> bool:
-    text = article_text(article).casefold()
-    return any(keyword.casefold() in text for keyword in keywords)
+    return text_has_any_keyword(article_text(article), keywords)
 
 
 def text_has_any_keyword(text: str, keywords: list[str]) -> bool:
-    folded = text.casefold()
-    return any(keyword.casefold() in folded for keyword in keywords)
+    return any(keyword_matches_text(text, keyword) for keyword in keywords)
 
 
 def category_keywords(category: str) -> list[str]:
@@ -127,9 +122,12 @@ def category_keywords(category: str) -> list[str]:
 
 def strongest_keyword_matches(text: str, keywords: Iterable[str]) -> list[str]:
     """한 문구에 포함된 짧은 키워드를 중복 근거로 세지 않습니다."""
-    folded = text.casefold()
     matches = sorted(
-        {keyword.casefold() for keyword in keywords if keyword and keyword.casefold() in folded},
+        {
+            keyword.casefold()
+            for keyword in keywords
+            if keyword and keyword_matches_text(text, keyword)
+        },
         key=lambda keyword: (-len(keyword), keyword),
     )
     selected: list[str] = []
@@ -192,8 +190,8 @@ def is_security_noise(article: Article) -> bool:
     has_video_security_core = text_has_any_keyword(text, SECURITY_CORE_KEYWORDS)
     if text_has_any_keyword(text, SECURITY_CYBER_ONLY_KEYWORDS) and not has_video_security_core:
         return True
-    title_has_disaster = any(keyword.casefold() in title for keyword in GENERAL_DISASTER_KEYWORDS)
-    title_has_security_core = any(keyword.casefold() in title for keyword in SECURITY_CORE_KEYWORDS)
+    title_has_disaster = text_has_any_keyword(title, GENERAL_DISASTER_KEYWORDS)
+    title_has_security_core = text_has_any_keyword(title, SECURITY_CORE_KEYWORDS)
     if title_has_disaster and not title_has_security_core:
         return True
     if has_video_security_core:
@@ -217,7 +215,7 @@ def is_government_led_article(article: Article) -> bool:
         first_clause.startswith(actor.casefold()) or actor.casefold() in first_clause
         for actor in GOVERNMENT_ACTORS + GOVERNMENT_ACTOR_ALIASES
     )
-    has_action = any(action.casefold() in text for action in GOVERNMENT_ACTIONS + GOVERNMENT_ACTION_ALIASES)
+    has_action = text_has_any_keyword(text, GOVERNMENT_ACTIONS + GOVERNMENT_ACTION_ALIASES)
     return has_actor and has_action
 
 
@@ -254,12 +252,12 @@ def is_general_government_noise(article: Article) -> bool:
 def has_government_actor(article: Article) -> bool:
     title = article.title.casefold()
     text = article_text(article).casefold()
-    if any(actor.casefold() in title for actor in GOVERNMENT_ACTOR_ALIASES):
+    if text_has_any_keyword(title, GOVERNMENT_ACTOR_ALIASES):
         return True
     concrete_actors = [keyword for keyword in GOVERNMENT_PUBLIC_ACTOR_KEYWORDS if keyword != "공공"]
-    if any(actor.casefold() in title for actor in concrete_actors):
+    if text_has_any_keyword(title, concrete_actors):
         return True
-    return "장관" in text and any(keyword.casefold() in title for keyword in GOVERNMENT_TECH_POLICY_KEYWORDS)
+    return "장관" in text and text_has_any_keyword(title, GOVERNMENT_TECH_POLICY_KEYWORDS)
 
 
 def has_government_priority_domain(article: Article) -> bool:
@@ -439,12 +437,11 @@ def rule_score(article: Article, category: str) -> float:
     # Negative title weights suppress noisy articles that often match broad terms
     # but are not suitable for a company-wide technology/news digest.
     for keyword, weight in negative_title_weights().items():
-        if keyword.casefold() in title:
+        if keyword_matches_text(title, keyword):
             score += weight
 
     for keyword in BLACKLIST_KEYWORDS:
-        needle = keyword.casefold()
-        if needle in title or needle in description:
+        if keyword_matches_text(title, keyword) or keyword_matches_text(description, keyword):
             score -= 3.0
 
     return max(0.0, min(1.0, score / max_score))
@@ -524,9 +521,13 @@ def reason_for(article: Article, category: str, components: dict[str, float]) ->
     text = article_text(article).casefold()
     title = article.title.casefold()
     matched_title_keywords = [
-        keyword for keyword in category_title_weights(category) if keyword.casefold() in title
+        keyword
+        for keyword in category_title_weights(category)
+        if keyword_matches_text(title, keyword)
     ][:3]
-    matched_keywords = [keyword for keyword in category_keywords(category) if keyword.casefold() in text][:3]
+    matched_keywords = [
+        keyword for keyword in category_keywords(category) if keyword_matches_text(text, keyword)
+    ][:3]
     parts: list[str] = []
     if matched_title_keywords:
         parts.append(f"제목에 {', '.join(matched_title_keywords)} 핵심 키워드 포함")

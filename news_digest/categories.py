@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from .keyword_matching import keyword_matches_text
+
 from urllib.parse import urlsplit
 
 from .models import Article
@@ -139,7 +141,9 @@ def classify_article(article: Article) -> str:
     best_score = 0
 
     for category in CATEGORY_ORDER:
-        score = sum(1 for keyword in CATEGORY_KEYWORDS[category] if keyword.casefold() in text)
+        score = sum(
+            1 for keyword in CATEGORY_KEYWORDS[category] if keyword_matches_text(text, keyword)
+        )
         if score > best_score:
             best_category = category
             best_score = score

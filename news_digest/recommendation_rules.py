@@ -40,7 +40,7 @@ CATEGORY_QUALITY_SCORE_WINDOWS = {
 # 만족하는 후보로 카테고리별 권장 최소 개수까지 보충합니다.
 CATEGORY_SELECTION_POLICIES = {
     CATEGORY_INNODEP: (2, 0.65),
-    CATEGORY_SECURITY: (3, 0.65),
+    CATEGORY_SECURITY: (3, 0.50),
     CATEGORY_INDUSTRY: (3, 0.50),
     CATEGORY_GOVERNMENT: (3, 0.65),
     CATEGORY_VENTURE: (3, 0.65),
@@ -129,9 +129,7 @@ DEFAULT_CATEGORY_TITLE_WEIGHTS = {
         "공급": 7.0,
         "수주": 8.0,
         "자동화": 6.0,
-        "엔비디아": 8.0,
         "AX": 7.0,
-        "반도체": 7.0,
     },
     CATEGORY_GOVERNMENT: {
         "정부": 5.0,

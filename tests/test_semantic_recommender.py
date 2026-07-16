@@ -168,6 +168,25 @@ class SemanticScoringTests(unittest.TestCase):
         self.assertEqual(set(matches), {"통합관제센터", "구축"})
         self.assertEqual(recommender.category_keywords(CATEGORY_INNODEP).count("이노뎁"), 1)
 
+    def test_compound_keyword_terms_can_match_separately_in_any_order(self) -> None:
+        self.assertTrue(
+            recommender.keyword_matches_text("AI용 차세대 반도체 개발", "AI 반도체")
+        )
+        self.assertTrue(
+            recommender.keyword_matches_text("반도체 산업에 AI 기술 적용", "AI 반도체")
+        )
+        self.assertFalse(
+            recommender.keyword_matches_text("차세대 반도체 생산 확대", "AI 반도체")
+        )
+
+    def test_separated_compound_match_suppresses_its_shorter_keyword(self) -> None:
+        matches = recommender.strongest_keyword_matches(
+            "AI용 차세대 반도체 개발",
+            ["AI", "반도체", "AI 반도체"],
+        )
+
+        self.assertEqual(matches, ["ai 반도체"])
+
     def test_security_actor_normalizes_local_government_office_suffix(self) -> None:
         city = article("보령시, 방범 CCTV 154대 확충")
         city_hall = article("보령시청, AI CCTV 관제 시스템 도입")
