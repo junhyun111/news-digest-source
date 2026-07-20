@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from email.headerregistry import Address
 from email.message import EmailMessage
 from html import escape
 import smtplib
@@ -172,7 +173,7 @@ def send_digest(config: Config, articles: list[Article]) -> None:
 
     message = EmailMessage()
     message["Subject"] = build_subject(config.timezone)
-    message["From"] = config.mail_sender
+    message["From"] = Address(display_name="이노뎁 뉴스", addr_spec=config.mail_sender)
     message["To"] = ", ".join(recipients)
     message.set_content(render_digest(articles))
     message.add_alternative(render_digest_html(articles, timezone=config.timezone), subtype="html")
