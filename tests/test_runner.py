@@ -11,6 +11,7 @@ from news_digest.models import Article
 from news_digest.runner import (
     article_from_dict,
     article_to_dict,
+    korean_public_holiday_name,
     render_industry_diagnostics,
     save_prepared_digest,
 )
@@ -70,13 +71,56 @@ class RunnerSerializationTests(unittest.TestCase):
         self.assertIn("의도 반도체·인프라", output)
         self.assertIn("산업 중요도 부족", output)
 
+    def test_korean_public_holiday_is_detected_in_configured_timezone(self) -> None:
+        holiday_name = korean_public_holiday_name(
+            "Asia/Seoul",
+            now=datetime(2025, 12, 31, 15, 30, tzinfo=timezone.utc),
+        )
+
+        self.assertIsNotNone(holiday_name)
+
+    def test_regular_weekday_is_not_a_korean_public_holiday(self) -> None:
+        holiday_name = korean_public_holiday_name(
+            "Asia/Seoul",
+            now=datetime(2026, 1, 2, 0, 0, tzinfo=timezone.utc),
+        )
+
+        self.assertIsNone(holiday_name)
+
+    def test_substitute_holiday_is_detected(self) -> None:
+        holiday_name = korean_public_holiday_name(
+            "Asia/Seoul",
+            now=datetime(2026, 3, 1, 15, 30, tzinfo=timezone.utc),
+        )
+
+        self.assertIsNotNone(holiday_name)
+
+    def test_public_holiday_skips_collection_and_email(self) -> None:
+        config = type("ConfigStub", (), {"timezone": "Asia/Seoul"})()
+        with (
+            patch.object(runner.Config, "from_env", return_value=config),
+            patch.object(runner, "korean_public_holiday_name", return_value="New Year's Day"),
+            patch.object(runner, "build_digest") as build_digest,
+            patch.object(runner, "send_digest") as send_digest,
+        ):
+            exit_code = runner.run_digest()
+
+        self.assertEqual(exit_code, 0)
+        build_digest.assert_not_called()
+        send_digest.assert_not_called()
+
     def test_send_prepared_deletes_json_after_successful_send(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "prepared.json"
             save_prepared_digest(path, [self.prepared_article()])
 
             with (
-                patch.object(runner.Config, "from_env", return_value=object()),
+                patch.object(
+                    runner.Config,
+                    "from_env",
+                    return_value=type("ConfigStub", (), {"timezone": "Asia/Seoul"})(),
+                ),
+                patch.object(runner, "korean_public_holiday_name", return_value=None),
                 patch.object(runner, "send_digest") as send_digest,
             ):
                 exit_code = runner.run_digest(send_prepared=str(path))
@@ -91,10 +135,32 @@ class RunnerSerializationTests(unittest.TestCase):
             save_prepared_digest(path, [self.prepared_article()])
 
             with (
-                patch.object(runner.Config, "from_env", return_value=object()),
+                patch.object(
+                    runner.Config,
+                    "from_env",
+                    return_value=type("ConfigStub", (), {"timezone": "Asia/Seoul"})(),
+                ),
+                patch.object(runner, "korean_public_holiday_name", return_value=None),
                 patch.object(runner, "send_digest", side_effect=RuntimeError("SMTP failure")),
             ):
                 exit_code = runner.run_digest(send_prepared=str(path))
 
             self.assertEqual(exit_code, 1)
+            self.assertTrue(path.exists())
+
+    def test_send_prepared_keeps_json_on_public_holiday(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "prepared.json"
+            save_prepared_digest(path, [self.prepared_article()])
+            config = type("ConfigStub", (), {"timezone": "Asia/Seoul"})()
+
+            with (
+                patch.object(runner.Config, "from_env", return_value=config),
+                patch.object(runner, "korean_public_holiday_name", return_value="New Year's Day"),
+                patch.object(runner, "send_digest") as send_digest,
+            ):
+                exit_code = runner.run_digest(send_prepared=str(path))
+
+            self.assertEqual(exit_code, 0)
+            send_digest.assert_not_called()
             self.assertTrue(path.exists())

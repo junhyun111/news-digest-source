@@ -1,3 +1,4 @@
+holidays
 numpy
 sentence-transformers
 tzdata

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+import holidays
 import json
 import logging
 from pathlib import Path
@@ -10,10 +11,21 @@ from .config import Config
 from .emailer import render_digest, send_digest
 from .models import Article
 from .pipeline import build_digest
+from .timezones import get_timezone
 
 
 LOGGER = logging.getLogger(__name__)
 DRY_RUN_REJECTION_DETAIL_LIMIT = 50
+
+
+def korean_public_holiday_name(
+    timezone: str,
+    now: datetime | None = None,
+) -> str | None:
+    """Return the Korean public holiday name for the local date, if any."""
+    tz = get_timezone(timezone)
+    local_date = (now or datetime.now(tz)).astimezone(tz).date()
+    return holidays.KR(years=local_date.year).get(local_date)
 
 
 def configure_console(verbose: bool = False) -> None:
@@ -132,6 +144,15 @@ def run_digest(
             raise ValueError("--prepare-output and --send-prepared cannot be used together.")
 
         config = Config.from_env()
+        if not dry_run and not prepare_output:
+            holiday_name = korean_public_holiday_name(config.timezone)
+            if holiday_name:
+                LOGGER.info(
+                    "Skipping email because today is a Korean public holiday: %s",
+                    holiday_name,
+                )
+                return 0
+
         if send_prepared:
             prepared_path = Path(send_prepared)
             articles = load_prepared_digest(prepared_path)
